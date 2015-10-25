@@ -4,7 +4,7 @@ define(['jquery', 'module', 'app', 'cfg-panel-applet'], function($, Module, App,
 
     WhatsNewModule.prototype = new Module()
 
-    WhatsNewModule.prototype.init = function whatsNewModule_init(config, text) {
+    WhatsNewModule.prototype.init = function whatsNew_init(config, text) {
         config = config || {}
 
         if (config.text != text) {
@@ -16,7 +16,7 @@ define(['jquery', 'module', 'app', 'cfg-panel-applet'], function($, Module, App,
         return config
     }
 
-    WhatsNewModule.prototype.attach = function whatsNewModule_apply(config) {
+    WhatsNewModule.prototype.attach = function whatsNew_apply(config) {
         if (this._alertText) {
             alert(this._alertText)
         }
@@ -24,11 +24,11 @@ define(['jquery', 'module', 'app', 'cfg-panel-applet'], function($, Module, App,
         delete this._alertText
     }
 
-    WhatsNewModule.prototype.detach = function whatsNewModule_detach() {
+    WhatsNewModule.prototype.detach = function whatsNew_detach() {
         return true
     }
 
-    WhatsNewModule.prototype.createCfgPanelApplet = function whatsNewModule_createCfgPanelApplet() {
+    WhatsNewModule.prototype.createCfgPanelApplet = function whatsNew_createCfgPanelApplet() {
         return new WhatsNewCfgPanelApplet()
     }
 
@@ -36,11 +36,11 @@ define(['jquery', 'module', 'app', 'cfg-panel-applet'], function($, Module, App,
 
     WhatsNewCfgPanelApplet.prototype = new CfgPanelApplet()
 
-    WhatsNewCfgPanelApplet.prototype.build = function whatsNewCfgPanelApplet_build() {
+    WhatsNewCfgPanelApplet.prototype.build = function whatsNewApplet_build() {
         return this.div = $('<div>')
     }
 
-    WhatsNewCfgPanelApplet.prototype.setData = function whatsNewCfgPanelApplet_setData(enabled, config) {
+    WhatsNewCfgPanelApplet.prototype.setData = function whatsNewApplet_setData(enabled, config) {
         CfgPanelApplet.prototype.setData.apply(this, arguments) // call to super()
         this.div.html('<strong>Что нового:</strong><br/>' + config.text)
     }
