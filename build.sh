@@ -24,13 +24,16 @@ function add_image() {
     local F="$1"
     local OUT="$2"
     local NAME="$(basename "${F%%.*}")"
-    local MIME="${F##*.}"
+    local MIME="$(file -b --mime-type "$F")"
     echo                                >> "$OUT"
     echo -n "define('img/$NAME', [], '" >> "$OUT"
-    echo -n "data:image/$MIME;base64,"  >> "$OUT"
+    echo -n "data:$MIME;base64,"        >> "$OUT"
     base64 --wrap=0 "$F"                >> "$OUT"
     echo "')"                           >> "$OUT"
 }
+
+
+# 2.1. bare script for testing purposes
 
 OUT=out/$NAME.bare.js
 
@@ -50,6 +53,8 @@ done
 
 add_module "src/start.js" "$OUT"
 
+
+# 2.2. main output file
 
 OUT=out/$NAME.user.js
 

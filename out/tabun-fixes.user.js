@@ -504,14 +504,14 @@ define(['module'], function(Module) {
             this.host + ")"
     }
 
-    AlterLinksToMirrorsModule.prototype.attach = function alterLinksToMirrors_apply(config) {
+    AlterLinksToMirrorsModule.prototype.attach = function alterLinksToMirrors_attach(config) {
         this.handler = (function(ev) {
             this.changeAnchorHrefForClick(closestAnchor(ev.target))
         }).bind(this)
         document.addEventListener('click', this.handler, true)
     }
 
-    AlterLinksToMirrorsModule.prototype.detach = function alterLinksToMirrors_remove(сonfig) {
+    AlterLinksToMirrorsModule.prototype.detach = function alterLinksToMirrors_detach(сonfig) {
         document.removeEventListener('click', this.handler, true)
         this.handler = null
     }
@@ -960,7 +960,9 @@ define(['app'], function(App) {
     new App('tabun-fixes')
         .add('cfg-panel',              { defaultEnabled:true })
         .add('alter-links-to-mirrors', { defaultEnabled:true, cfgPanel:{column:1} })
-        .add('whats-new',              { defaultEnabled:true, cfgPanel:{column:2} }, "What's new text")
+        .add('whats-new',              { defaultEnabled:true, cfgPanel:{column:2} },
+            "• Новый модульный движок<br/>• Совместимость с новым Табуном"
+        )
         //.add('fix-scroll',             { defaultEnabled:true, cfgPanel:{skip:true} })
         .start()
 
