@@ -44,7 +44,7 @@ define(['jquery', 'deep', 'cfg-panel-applet'], function($, deep, CfgPanelApplet)
 
         this._ui.find('INPUT[name],TEXTAREA[name]').each(function() {
             var el = $(this)
-            res[el.attr('name')] = getval(el)
+            res[el.attr('name')] = getVal(el)
         })
 
         return res
