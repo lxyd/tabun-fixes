@@ -80,6 +80,7 @@ define(['jquery', 'module', 'app', 'basic-cfg-panel-applet', 'img/gear'], functi
                     module: applet.module,
                     ui: $(applet.applet.build())
                             .css('margin-bottom', '10px')
+                            .css('background', applet.module.isDirty() ? '#FDD' : 'none') // TODO : theme
                             .appendTo(td),
                 }
             }.bind(this))
@@ -139,8 +140,6 @@ define(['jquery', 'module', 'app', 'basic-cfg-panel-applet', 'img/gear'], functi
         $(document.body).append(this._dialog)
 
         this._setAppletsData()
-
-        // TODO : highlight dirty modules
     }
 
     CfgPanel.prototype._setAppletsData = function cfgPanel_setAppletsData() {
