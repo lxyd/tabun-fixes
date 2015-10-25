@@ -117,6 +117,11 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
         return this._enabled[this._getModuleId(moduleOrId)]
     }
 
+    App.prototype.isModuleDirty = function app_isModuleDirty(moduleOrId) {
+        this._checkStarted(true)
+        return this._dirty[this._getModuleId(moduleOrId)]
+    }
+
     App.prototype.setModuleEnabled = function app_setModuleEnabled(moduleOrId, enabled) {
         this._checkStarted(true)
 
