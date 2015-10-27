@@ -143,7 +143,7 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
             if (enabled) {
                 this._modules[id].module.attach(deep.clone(this._configs[id]))
             } else {
-                if (!this._modules[id].module.detach()) {
+                if (this._modules[id].module.detach() == false) {
                     this._dirty[id] = true
                 }
             }
@@ -177,7 +177,7 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
         }
 
         try {
-            if (!this._modules[id].module.update(config)) {
+            if (this._modules[id].module.update(config) == false) {
                 this._dirty[id] = true
             }
         } catch (err) {

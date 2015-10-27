@@ -50,7 +50,7 @@ define(function() {
     }
 
     Module.prototype.update = function module_update(config) {
-        if (!this.detach()) {
+        if (this.detach() == false) {
             return false
         }
         this.attach(config)

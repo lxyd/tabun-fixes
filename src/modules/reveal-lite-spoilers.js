@@ -25,8 +25,6 @@ define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApple
         console.log('detach', this._style)
         this._style.remove()
         this._style = null
-
-        return true
     }
 
     RevealLiteSpoilersModule.prototype.createCfgPanelApplet = function revealLiteSpoilers_createCfgPanelApplet() {
