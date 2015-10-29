@@ -276,7 +276,7 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
             if (enabled) {
                 this._modules[id].module.attach(deep.clone(this._configs[id]))
             } else {
-                if (!this._modules[id].module.detach()) {
+                if (this._modules[id].module.detach() == false) {
                     this._dirty[id] = true
                 }
             }
@@ -310,7 +310,7 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
         }
 
         try {
-            if (!this._modules[id].module.update(config)) {
+            if (this._modules[id].module.update(config) == false) {
                 this._dirty[id] = true
             }
         } catch (err) {
@@ -468,7 +468,7 @@ define(function() {
     }
 
     Module.prototype.update = function module_update(config) {
-        if (!this.detach()) {
+        if (this.detach() == false) {
             return false
         }
         this.attach(config)
@@ -565,6 +565,144 @@ define(['module'], function(Module) {
     }
 
     return AlterLinksToMirrorsModule
+})
+
+define('alter-same-page-links', [])
+define(['module'], function(Module) {
+
+    var mirrors = [
+        'tabun.everypony.ru',
+        'tabun.everypony.info',
+        'табун.всепони.рф',
+    ]
+
+    function AlterSamePageLinksModule() { }
+
+    AlterSamePageLinksModule.prototype = new Module()
+
+    AlterSamePageLinksModule.prototype.init = function alterSamePageLinks_init(config) {
+        this.cssClass = this.getApp().getId() + '-same-page-anchor'
+        return config
+    }
+
+    AlterSamePageLinksModule.prototype.getLabel = function alterSamePageLinks_getLabel() {
+        return "При клике на ссылку на коммент, находящийся на текущей странице, сразу скроллить на него (такие ссылки будут зеленеть при наведении)"
+    }
+
+    AlterSamePageLinksModule.prototype.attach = function alterSamePageLinks_attach(config) {
+        this.clickHandler = this.onClick.bind(this)
+        this.mouseOverHandler = this.onMouseOver.bind(this)
+        this.mouseOutHandler = this.onMouseOut.bind(this)
+        document.addEventListener('click', this.clickHandler, true)
+        document.addEventListener('mouseover', this.mouseOverHandler)
+        document.addEventListener('mouseout', this.mouseOutHandler)
+
+        this.style = $('<style>').text(
+                'A.' + this.cssClass + ', ' +
+                'A.' + this.cssClass + ':hover, ' +
+                'A.' + this.cssClass + ':visited {color: #0A0 !important}')
+            .appendTo(document.head)
+    }
+
+    AlterSamePageLinksModule.prototype.detach = function alterSamePageLinks_detach(сonfig) {
+        document.removeEventListener('click', this.clickHandler, true)
+        document.removeEventListener('mouseover', this.mouseOverHandler)
+        document.removeEventListener('mouseout', this.mouseOutHandler)
+        this.clickHandler = null
+        this.mouseOverHandler = null
+        this.mouseOutHandler = null
+
+        this.style.remove()
+        this.style = null
+
+        $('A.' + this.cssClass).removeClass(this.cssClass)
+    }
+
+    AlterSamePageLinksModule.prototype.onClick = function alterSamePageLinks_onClick(ev) {
+        var a = closestAnchor(ev.target)
+          , id = getLinkedCommentId(a)
+
+        if (!isSamePageComment(id)) {
+            return
+        }
+
+        // TODO : remove this line
+        window.location.hash = "comment" + id
+
+        /* TODO : uncomment this part
+        // update #hash part of the url avoiding immediate scrolling via mungling anchor's name
+        var elCommentAnchor = $('#comment_id_' + id + ' A[name="comment' + id + '"]')
+        elCommentAnchor.attr('name', 'mungle-comment' + id)
+        window.location.hash = "comment" + id
+        elCommentAnchor.attr('name', 'comment' + id)
+
+        // TODO : implement for new tabun version
+        // smooth scroll to the element
+        ls.comments.scrollToComment(id)
+
+        // TODO : remember clicked link and add back link to the target comment
+        */
+
+        ev.stopImmediatePropagation()
+        ev.preventDefault()
+        return false
+    }
+
+    AlterSamePageLinksModule.prototype.onMouseOver = function alterSamePageLinks_onMouseOver(ev) {
+        var a = closestAnchor(ev.target)
+        if (isSamePageComment(getLinkedCommentId(a))) {
+            $(a).addClass(this.cssClass)
+        }
+    }
+
+    AlterSamePageLinksModule.prototype.onMouseOut = function alterSamePageLinks_onMouseOut(ev) {
+        var a = closestAnchor(ev.target)
+        $(a).removeClass(this.cssClass)
+    }
+
+    function closestAnchor(el) {
+        while (el instanceof HTMLElement) {
+            if (el.nodeName.toUpperCase() == 'A') {
+                return el
+            } else {
+                el = el.parentNode
+            }
+        }
+
+        return null
+    }
+
+    function isAnchorWithHref(el) {
+        return el instanceof HTMLElement &&
+            el.nodeName.toUpperCase() == 'A' &&
+            el.href
+    }
+
+    var reCommentInPath = new RegExp('^/comments/([^/]+)/*$')
+      , reCommentInHash = new RegExp('^#comment(.+)$')
+
+    function getLinkedCommentId(a) {
+        var res
+        if (!isAnchorWithHref(a)) {
+            return null
+        }
+        if (mirrors.indexOf(a.host) < 0) {
+            return null
+        }
+        if (null != (res = (reCommentInPath.exec(a.pathname)||[])[1])) {
+            return res
+        }
+        if (null != (res = (reCommentInHash.exec(a.hash)||[])[1])) {
+            return res
+        }
+        return null
+    }
+
+    function isSamePageComment(id) {
+        return id != null && document.getElementById('comment_id_' + id) != null
+    }
+
+    return AlterSamePageLinksModule
 })
 
 define('basic-cfg-panel-applet', [])
@@ -888,7 +1026,7 @@ define(['jquery', 'module', 'app', 'basic-cfg-panel-applet', 'img/gear'], functi
 })
 
 define('reveal-lite-spoilers', [])
-define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApplet) {
+define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
 
     function RevealLiteSpoilersModule() { }
 
@@ -896,37 +1034,32 @@ define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApple
 
     RevealLiteSpoilersModule.prototype.init = function revealLiteSpoilers_init(config) {
         config = config || {
+            revealOnHover: false,
             alwaysReveal: false,
         }
         return config
     }
 
     RevealLiteSpoilersModule.prototype.getLabel = function revealLiteSpoilers_getLabel() {
-        return "Приоткрывать лайт-спойлеры при наведении на пост/коммент"
+        return "Приоткрывать лайт-спойлеры"
     }
 
     RevealLiteSpoilersModule.prototype.attach = function revealLiteSpoilers_attach(config) {
-        console.log('attach', this._style)
         this._generateStyleSheet(config)
-        this._style.appendTo(document.head)
+        if (this._style) {
+            this._style.appendTo(document.head)
+        }
     }
 
     RevealLiteSpoilersModule.prototype.detach = function revealLiteSpoilers_detach(сonfig) {
-        console.log('detach', this._style)
-        this._style.remove()
-        this._style = null
-
-        return true
+        if (this._style) {
+            this._style.remove()
+            this._style = null
+        }
     }
 
     RevealLiteSpoilersModule.prototype.createCfgPanelApplet = function revealLiteSpoilers_createCfgPanelApplet() {
-        var chkAlways = $('<input>')
-                .attr('type', 'checkbox')
-                .attr('name', 'alwaysReveal')
-
-        return new BasicCfgPanelApplet(this.getLabel(),
-                $("<br/>"),
-                $('<label>').text("Всегда светить лайт-спойлеры").prepend(chkAlways))
+        return new RevealLiteSpoilersCfgPanelApplet()
     }
 
     RevealLiteSpoilersModule.prototype._generateStyleSheet = function revealLiteSpoilers_generateStyleSheet(config) {
@@ -968,7 +1101,7 @@ define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApple
                 selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
                 selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
             )
-        } else {
+        } else if (config.revealOnHover) {
             this._style = $('<style>').text(
                 selectorPostHoverSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
                 selectorPostHoverA + ' { color: ' + transATextColor + ' !important; } ' +
@@ -982,6 +1115,62 @@ define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApple
 
     }
 
+    function RevealLiteSpoilersCfgPanelApplet() { }
+
+    RevealLiteSpoilersCfgPanelApplet.prototype = new CfgPanelApplet()
+
+    RevealLiteSpoilersCfgPanelApplet.prototype.build = function revealLiteSpoilersApplet_build() {
+        this.chkOnHover = $('<input>')
+                .attr('type', 'checkbox')
+                .attr('name', 'revealOnHover')
+        this.chkAlways = $('<input>')
+                .attr('type', 'checkbox')
+                .attr('name', 'alwaysReveal')
+
+        var div = $('<div>')
+          , labelOnHover = $('<label>')
+                .text("Приоткрывать лайт-спойлеры при наведении на пост/коммент")
+                .prepend(this.chkOnHover)
+          , labelAlways = $('<label>')
+                .text("Всегда светить лайт-спойлеры")
+                .prepend(this.chkAlways)
+
+        div.append(labelOnHover, '<br/>', labelAlways)
+
+        this.chkAlways.on('change', function() {
+            if (this.chkAlways.is(':checked')) {
+                this.chkOnHover.prop('checked', null)
+            }
+        }.bind(this))
+
+        this.chkOnHover.on('change', function() {
+            if (this.chkOnHover.is(':checked')) {
+                this.chkAlways.prop('checked', null)
+            }
+        }.bind(this))
+
+        return div
+    }
+
+    RevealLiteSpoilersCfgPanelApplet.prototype.setData = function revealLiteSpoilersApplet_setData(enabled, config) {
+        CfgPanelApplet.prototype.setData.apply(this, arguments) // call to super()
+        this.chkOnHover.prop('checked', config.revealOnHover ? 'checked' : null)
+        this.chkAlways.prop('checked', config.alwaysReveal ? 'checked' : null)
+    }
+
+    RevealLiteSpoilersCfgPanelApplet.prototype.getEnabled = function revealLiteSpoilersApplet_getEnabled() {
+        return this.chkOnHover.is(':checked') || this.chkAlways.is(':checked')
+    }
+
+    RevealLiteSpoilersCfgPanelApplet.prototype.getConfig = function revealLiteSpoilersApplet_getConfig() {
+        var cfg = CfgPanelApplet.prototype.getConfig.apply(this, arguments) // call to super()
+
+        cfg.revealOnHover = this.chkOnHover.is(':checked')
+        cfg.alwaysReveal = this.chkAlways.is(':checked')
+
+        return cfg
+    }
+
     return RevealLiteSpoilersModule
 })
 
@@ -992,6 +1181,67 @@ define('shim', [])
 
 define('jquery', function() {
     return jQuery
+})
+
+define('spacebar-move-to-next', [])
+define(['jquery', 'module'], function($, Module) {
+    function SpacebarMoveToNextModule() { }
+
+    SpacebarMoveToNextModule.prototype = new Module()
+
+    SpacebarMoveToNextModule.prototype.getLabel = function spacebarMoveToNext_getLabel() {
+        return "По пробелу переходить на следующий пост/непрочитанный коммент"
+    }
+
+    SpacebarMoveToNextModule.prototype.attach = function spacebarMoveToNext_attach(config) {
+        this.handler = this.onSpacebarPressed.bind(this)
+        document.addEventListener('keypress', this.handler)
+    }
+
+    SpacebarMoveToNextModule.prototype.detach = function spacebarMoveToNext_detach(сonfig) {
+        document.removeEventListener('keypress', this.handler)
+        this.handler = null
+    }
+
+    SpacebarMoveToNextModule.prototype.onSpacebarPressed = function spacebarMoveToNext_onSpacebarPressed(ev) {
+        var el = ev.target
+        if (el.tagName == 'INPUT' || el.tagName == 'SELECT' || el.tagName == 'TEXTAREA' || el.isContentEditable) {
+            // ignore input fields (as in https://github.com/ccampbell/mousetrap/blob/master/mousetrap.js)
+            return
+        }
+        if (ev.which == KeyEvent.DOM_VK_SPACE) {
+            if (this.goToNext()) {
+                ev.preventDefault()
+            }
+        }
+    }
+
+    SpacebarMoveToNextModule.prototype.goToNext = function spacebarMoveToNext_goToNext() {
+        if ($.fn.stop) {
+            $(window).stop(true)
+        }
+        if ($('#update-comments').length) { // we are on comments
+            return ls.comments.goToNextComment()
+        } else {
+            var article
+            $('ARTICLE').each(function() {
+                var el = $(this)
+                /* 40px - небольшой запас на случай микроскроллов, не очень заметных пользователю */
+                if (el.offset().top > $(window).scrollTop() + 40) {
+                    article = el
+                    return false
+                }
+            })
+            if (article) {
+                $.scrollTo(article, 300, {offset: -10})
+                return true
+            } else {
+                return false
+            }
+        }
+    }
+
+    return SpacebarMoveToNextModule
 })
 
 define('whats-new', [])
@@ -1061,8 +1311,10 @@ define(['app'], function(App) {
 
     new App('tabun-fixes')
         .add('cfg-panel',              { defaultEnabled:true })
+        .add('alter-same-page-links',  { defaultEnabled:true,  cfgPanel:{column:1} })
         .add('alter-links-to-mirrors', { defaultEnabled:true,  cfgPanel:{column:1} })
         .add('reveal-lite-spoilers',   { defaultEnabled:false, cfgPanel:{column:1} })
+        .add('spacebar-move-to-next',  { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',              { defaultEnabled:true,  cfgPanel:{column:2} },
             "• Новый модульный движок<br/>• Совместимость с новым Табуном"
         )
