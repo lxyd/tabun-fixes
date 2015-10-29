@@ -16,13 +16,11 @@ define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApple
     }
 
     RevealLiteSpoilersModule.prototype.attach = function revealLiteSpoilers_attach(config) {
-        console.log('attach', this._style)
         this._generateStyleSheet(config)
         this._style.appendTo(document.head)
     }
 
     RevealLiteSpoilersModule.prototype.detach = function revealLiteSpoilers_detach(сonfig) {
-        console.log('detach', this._style)
         this._style.remove()
         this._style = null
     }
