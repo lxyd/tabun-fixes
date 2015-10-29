@@ -1,4 +1,4 @@
-define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApplet) {
+define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
 
     function RevealLiteSpoilersModule() { }
 
@@ -6,33 +6,32 @@ define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApple
 
     RevealLiteSpoilersModule.prototype.init = function revealLiteSpoilers_init(config) {
         config = config || {
+            revealOnHover: false,
             alwaysReveal: false,
         }
         return config
     }
 
     RevealLiteSpoilersModule.prototype.getLabel = function revealLiteSpoilers_getLabel() {
-        return "Приоткрывать лайт-спойлеры при наведении на пост/коммент"
+        return "Приоткрывать лайт-спойлеры"
     }
 
     RevealLiteSpoilersModule.prototype.attach = function revealLiteSpoilers_attach(config) {
         this._generateStyleSheet(config)
-        this._style.appendTo(document.head)
+        if (this._style) {
+            this._style.appendTo(document.head)
+        }
     }
 
     RevealLiteSpoilersModule.prototype.detach = function revealLiteSpoilers_detach(сonfig) {
-        this._style.remove()
-        this._style = null
+        if (this._style) {
+            this._style.remove()
+            this._style = null
+        }
     }
 
     RevealLiteSpoilersModule.prototype.createCfgPanelApplet = function revealLiteSpoilers_createCfgPanelApplet() {
-        var chkAlways = $('<input>')
-                .attr('type', 'checkbox')
-                .attr('name', 'alwaysReveal')
-
-        return new BasicCfgPanelApplet(this.getLabel(),
-                $("<br/>"),
-                $('<label>').text("Всегда светить лайт-спойлеры").prepend(chkAlways))
+        return new RevealLiteSpoilersCfgPanelApplet()
     }
 
     RevealLiteSpoilersModule.prototype._generateStyleSheet = function revealLiteSpoilers_generateStyleSheet(config) {
@@ -74,7 +73,7 @@ define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApple
                 selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
                 selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
             )
-        } else {
+        } else if (config.revealOnHover) {
             this._style = $('<style>').text(
                 selectorPostHoverSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
                 selectorPostHoverA + ' { color: ' + transATextColor + ' !important; } ' +
@@ -86,6 +85,62 @@ define(['module', 'basic-cfg-panel-applet'], function(Module, BasicCfgPanelApple
             )
         }
 
+    }
+
+    function RevealLiteSpoilersCfgPanelApplet() { }
+
+    RevealLiteSpoilersCfgPanelApplet.prototype = new CfgPanelApplet()
+
+    RevealLiteSpoilersCfgPanelApplet.prototype.build = function revealLiteSpoilersApplet_build() {
+        this.chkOnHover = $('<input>')
+                .attr('type', 'checkbox')
+                .attr('name', 'revealOnHover')
+        this.chkAlways = $('<input>')
+                .attr('type', 'checkbox')
+                .attr('name', 'alwaysReveal')
+
+        var div = $('<div>')
+          , labelOnHover = $('<label>')
+                .text("Приоткрывать лайт-спойлеры при наведении на пост/коммент")
+                .prepend(this.chkOnHover)
+          , labelAlways = $('<label>')
+                .text("Всегда светить лайт-спойлеры")
+                .prepend(this.chkAlways)
+
+        div.append(labelOnHover, '<br/>', labelAlways)
+
+        this.chkAlways.on('change', function() {
+            if (this.chkAlways.is(':checked')) {
+                this.chkOnHover.prop('checked', null)
+            }
+        }.bind(this))
+
+        this.chkOnHover.on('change', function() {
+            if (this.chkOnHover.is(':checked')) {
+                this.chkAlways.prop('checked', null)
+            }
+        }.bind(this))
+
+        return div
+    }
+
+    RevealLiteSpoilersCfgPanelApplet.prototype.setData = function revealLiteSpoilersApplet_setData(enabled, config) {
+        CfgPanelApplet.prototype.setData.apply(this, arguments) // call to super()
+        this.chkOnHover.prop('checked', config.revealOnHover ? 'checked' : null)
+        this.chkAlways.prop('checked', config.alwaysReveal ? 'checked' : null)
+    }
+
+    RevealLiteSpoilersCfgPanelApplet.prototype.getEnabled = function revealLiteSpoilersApplet_getEnabled() {
+        return this.chkOnHover.is(':checked') || this.chkAlways.is(':checked')
+    }
+
+    RevealLiteSpoilersCfgPanelApplet.prototype.getConfig = function revealLiteSpoilersApplet_getConfig() {
+        var cfg = CfgPanelApplet.prototype.getConfig.apply(this, arguments) // call to super()
+
+        cfg.revealOnHover = this.chkOnHover.is(':checked')
+        cfg.alwaysReveal = this.chkAlways.is(':checked')
+
+        return cfg
     }
 
     return RevealLiteSpoilersModule
