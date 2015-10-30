@@ -7,6 +7,7 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
     RevealLiteSpoilersModule.prototype.init = function revealLiteSpoilers_init(config) {
         config = config || {
             revealOnHover: false,
+            revealInCurrentComment: false,
             alwaysReveal: false,
         }
         return config
@@ -58,33 +59,47 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
           , selectorPostHoverSpoiler = containers.map(function(s) { return s + ':hover .spoiler-gray' }).join(', ')
           , selectorPostHoverA = containers.map(function(s) { return s + ':hover .spoiler-gray A' }).join(', ')
           , selectorPostHoverAVisited = containers.map(function(s) { return s + ':hover .spoiler-gray A:visited' }).join(', ')
+            // селекторы для текущего коммента
+          , selectorPostActiveSpoiler = '.comment.comment-current .spoiler-gray'
+          , selectorPostActiveA = '.comment.comment-current .spoiler-gray A'
+          , selectorPostActiveAVisited = '.comment.comment-current .spoiler-gray A:visited'
             // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
           , selectorHoverSpoiler = containers.map(function(s) { return s + ':hover .spoiler-gray:hover' }).join(', ')
           , selectorHoverA = containers.map(function(s) { return s + ':hover .spoiler-gray:hover A' }).join(', ')
           , selectorHoverAVisited = containers.map(function(s) { return s + ':hover .spoiler-gray:hover A:visited' }).join(', ')
 
+        var css = ''
         if (config.alwaysReveal) {
-            this._style = $('<style>').text(
+            css += 
                 selectorSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
                 selectorA + ' { color: ' + transATextColor + ' !important; } ' +
-                selectorAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
-                // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
-                selectorHoverSpoiler + ' { background-color: transparent !important; color: ' + hoverTextColor + ' !important; } ' +
-                selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
-                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
-            )
-        } else if (config.revealOnHover) {
-            this._style = $('<style>').text(
-                selectorPostHoverSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
-                selectorPostHoverA + ' { color: ' + transATextColor + ' !important; } ' +
-                selectorPostHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
-                // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
-                selectorHoverSpoiler + ' { background-color: transparent !important; color: ' + hoverTextColor + ' !important; } ' +
-                selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
-                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
-            )
+                selectorAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+        } else {
+            if (config.revealOnHover) {
+                css += 
+                    selectorPostHoverSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
+                    selectorPostHoverA + ' { color: ' + transATextColor + ' !important; } ' +
+                    selectorPostHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+            }
+
+            if (config.revealInCurrentComment) {
+                css +=
+                    selectorPostActiveSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
+                    selectorHoverA + ' { color: ' + transATextColor + ' !important; } ' +
+                    selectorHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+            }
         }
 
+        if (css) {
+            css +=
+                // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
+                selectorHoverSpoiler + ' { background-color: transparent !important; color: ' + hoverTextColor + ' !important; } ' +
+                selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
+                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
+        }
+
+
+        this._style = $('<style>').text(css)
     }
 
     function RevealLiteSpoilersCfgPanelApplet() { }
@@ -95,6 +110,9 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
         this.chkOnHover = $('<input>')
                 .attr('type', 'checkbox')
                 .attr('name', 'revealOnHover')
+        this.chkInCurrent = $('<input>')
+                .attr('type', 'checkbox')
+                .attr('name', 'revealInCurrentComment')
         this.chkAlways = $('<input>')
                 .attr('type', 'checkbox')
                 .attr('name', 'alwaysReveal')
@@ -103,20 +121,30 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
           , labelOnHover = $('<label>')
                 .text("Приоткрывать лайт-спойлеры при наведении на пост/коммент")
                 .prepend(this.chkOnHover)
+          , labelInCurrent = $('<label>')
+                .text("Светить лайт-спойлеры в активном комменте")
+                .prepend(this.chkInCurrent)
           , labelAlways = $('<label>')
                 .text("Всегда светить лайт-спойлеры")
                 .prepend(this.chkAlways)
 
-        div.append(labelOnHover, '<br/>', labelAlways)
+        div.append(labelOnHover, '<br/>', labelInCurrent, '<br/>', labelAlways)
 
         this.chkAlways.on('change', function() {
             if (this.chkAlways.is(':checked')) {
                 this.chkOnHover.prop('checked', null)
+                this.chkInCurrent.prop('checked', null)
             }
         }.bind(this))
 
         this.chkOnHover.on('change', function() {
             if (this.chkOnHover.is(':checked')) {
+                this.chkAlways.prop('checked', null)
+            }
+        }.bind(this))
+
+        this.chkInCurrent.on('change', function() {
+            if (this.chkInCurrent.is(':checked')) {
                 this.chkAlways.prop('checked', null)
             }
         }.bind(this))
@@ -127,17 +155,19 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
     RevealLiteSpoilersCfgPanelApplet.prototype.setData = function revealLiteSpoilersApplet_setData(enabled, config) {
         CfgPanelApplet.prototype.setData.apply(this, arguments) // call to super()
         this.chkOnHover.prop('checked', config.revealOnHover ? 'checked' : null)
+        this.chkInCurrent.prop('checked', config.revealInCurrentComment ? 'checked' : null)
         this.chkAlways.prop('checked', config.alwaysReveal ? 'checked' : null)
     }
 
     RevealLiteSpoilersCfgPanelApplet.prototype.getEnabled = function revealLiteSpoilersApplet_getEnabled() {
-        return this.chkOnHover.is(':checked') || this.chkAlways.is(':checked')
+        return this.chkOnHover.is(':checked') || this.chkAlways.is(':checked') || this.chkInCurrent.is(':checked')
     }
 
     RevealLiteSpoilersCfgPanelApplet.prototype.getConfig = function revealLiteSpoilersApplet_getConfig() {
         var cfg = CfgPanelApplet.prototype.getConfig.apply(this, arguments) // call to super()
 
         cfg.revealOnHover = this.chkOnHover.is(':checked')
+        cfg.revealInCurrentComment = this.chkInCurrent.is(':checked')
         cfg.alwaysReveal = this.chkAlways.is(':checked')
 
         return cfg
