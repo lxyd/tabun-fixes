@@ -1025,6 +1025,49 @@ define(['jquery', 'module', 'app', 'basic-cfg-panel-applet', 'img/gear'], functi
 
 })
 
+define('fav-as-icon', [])
+define(['jquery', 'module', 'img/star-big-checked', 'img/star-big-unchecked', 'img/star-small-checked', 'img/star-small-unchecked'], function($, Module, imgStarBigChecked, imgStarBigUnchecked, imgStarSmallChecked, imgStarSmallUnchecked) {
+    function FavAsIconModule() { }
+
+    FavAsIconModule.prototype = new Module()
+
+    FavAsIconModule.prototype.getLabel = function favAsIcon_getLabel() {
+        return 'Заменить "В избранное" на звёздочку'
+    }
+
+    FavAsIconModule.prototype.attach = function favAsIcon_attach(config) {
+        this.style = $('<style>').text(
+            '.comment-info .favourite:before        { ' + genFavBeforeStyle(11, 11, imgStarSmallUnchecked) + ' }' +
+            '.comment-info .favourite.active:before { ' + genFavBeforeStyle(11, 11, imgStarSmallChecked)   + ' }' +
+            '.topic-info .favourite:before          { ' + genFavBeforeStyle(11, 11, imgStarSmallUnchecked) + ' }' +
+            '.topic-info .favourite.active:before   { ' + genFavBeforeStyle(11, 11, imgStarSmallChecked)   + ' }' +
+            '.table-talk .favourite:before          { ' + genFavBeforeStyle(17, 17, imgStarBigUnchecked)   + ' }' +
+            '.table-talk .favourite.active:before   { ' + genFavBeforeStyle(17, 17, imgStarBigChecked)     + ' }' +
+
+            '.comment-info .favourite { ' + genFavStyle(11, 11) + ' }' +
+            '.topic-info .favourite   { ' + genFavStyle(11, 11) + '; padding:0 !important; margin:6px 11px 6px 0px }' +
+            '.table-talk .favourite   { ' + genFavStyle(17, 17) + ' }'
+        ).appendTo(document.head)
+    }
+
+    FavAsIconModule.prototype.detach = function favAsIcon_detach(сonfig) {
+        if (this.style) {
+            this.style.remove()
+        }
+        this.style = null
+    }
+
+    function genFavBeforeStyle(w, h, img) {
+        return 'width:'+w+'px; height:'+h+'px; display:inline-block; content:" "; background:url("'+img+'")'
+    }
+
+    function genFavStyle(w, h) {
+        return 'width:'+w+'px; height:'+h+'px; display:inline-block; overflow:hidden'
+    }
+
+    return FavAsIconModule
+})
+
 define('reveal-lite-spoilers', [])
 define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
 
@@ -1035,6 +1078,7 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
     RevealLiteSpoilersModule.prototype.init = function revealLiteSpoilers_init(config) {
         config = config || {
             revealOnHover: false,
+            revealInCurrentComment: false,
             alwaysReveal: false,
         }
         return config
@@ -1086,33 +1130,47 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
           , selectorPostHoverSpoiler = containers.map(function(s) { return s + ':hover .spoiler-gray' }).join(', ')
           , selectorPostHoverA = containers.map(function(s) { return s + ':hover .spoiler-gray A' }).join(', ')
           , selectorPostHoverAVisited = containers.map(function(s) { return s + ':hover .spoiler-gray A:visited' }).join(', ')
+            // селекторы для текущего коммента
+          , selectorPostActiveSpoiler = '.comment.comment-current .spoiler-gray'
+          , selectorPostActiveA = '.comment.comment-current .spoiler-gray A'
+          , selectorPostActiveAVisited = '.comment.comment-current .spoiler-gray A:visited'
             // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
           , selectorHoverSpoiler = containers.map(function(s) { return s + ':hover .spoiler-gray:hover' }).join(', ')
           , selectorHoverA = containers.map(function(s) { return s + ':hover .spoiler-gray:hover A' }).join(', ')
           , selectorHoverAVisited = containers.map(function(s) { return s + ':hover .spoiler-gray:hover A:visited' }).join(', ')
 
+        var css = ''
         if (config.alwaysReveal) {
-            this._style = $('<style>').text(
+            css += 
                 selectorSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
                 selectorA + ' { color: ' + transATextColor + ' !important; } ' +
-                selectorAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
-                // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
-                selectorHoverSpoiler + ' { background-color: transparent !important; color: ' + hoverTextColor + ' !important; } ' +
-                selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
-                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
-            )
-        } else if (config.revealOnHover) {
-            this._style = $('<style>').text(
-                selectorPostHoverSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
-                selectorPostHoverA + ' { color: ' + transATextColor + ' !important; } ' +
-                selectorPostHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
-                // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
-                selectorHoverSpoiler + ' { background-color: transparent !important; color: ' + hoverTextColor + ' !important; } ' +
-                selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
-                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
-            )
+                selectorAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+        } else {
+            if (config.revealOnHover) {
+                css += 
+                    selectorPostHoverSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
+                    selectorPostHoverA + ' { color: ' + transATextColor + ' !important; } ' +
+                    selectorPostHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+            }
+
+            if (config.revealInCurrentComment) {
+                css +=
+                    selectorPostActiveSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
+                    selectorHoverA + ' { color: ' + transATextColor + ' !important; } ' +
+                    selectorHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+            }
         }
 
+        if (css) {
+            css +=
+                // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
+                selectorHoverSpoiler + ' { background-color: transparent !important; color: ' + hoverTextColor + ' !important; } ' +
+                selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
+                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
+        }
+
+
+        this._style = $('<style>').text(css)
     }
 
     function RevealLiteSpoilersCfgPanelApplet() { }
@@ -1123,6 +1181,9 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
         this.chkOnHover = $('<input>')
                 .attr('type', 'checkbox')
                 .attr('name', 'revealOnHover')
+        this.chkInCurrent = $('<input>')
+                .attr('type', 'checkbox')
+                .attr('name', 'revealInCurrentComment')
         this.chkAlways = $('<input>')
                 .attr('type', 'checkbox')
                 .attr('name', 'alwaysReveal')
@@ -1131,20 +1192,30 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
           , labelOnHover = $('<label>')
                 .text("Приоткрывать лайт-спойлеры при наведении на пост/коммент")
                 .prepend(this.chkOnHover)
+          , labelInCurrent = $('<label>')
+                .text("Светить лайт-спойлеры в активном комменте")
+                .prepend(this.chkInCurrent)
           , labelAlways = $('<label>')
                 .text("Всегда светить лайт-спойлеры")
                 .prepend(this.chkAlways)
 
-        div.append(labelOnHover, '<br/>', labelAlways)
+        div.append(labelOnHover, '<br/>', labelInCurrent, '<br/>', labelAlways)
 
         this.chkAlways.on('change', function() {
             if (this.chkAlways.is(':checked')) {
                 this.chkOnHover.prop('checked', null)
+                this.chkInCurrent.prop('checked', null)
             }
         }.bind(this))
 
         this.chkOnHover.on('change', function() {
             if (this.chkOnHover.is(':checked')) {
+                this.chkAlways.prop('checked', null)
+            }
+        }.bind(this))
+
+        this.chkInCurrent.on('change', function() {
+            if (this.chkInCurrent.is(':checked')) {
                 this.chkAlways.prop('checked', null)
             }
         }.bind(this))
@@ -1155,17 +1226,19 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
     RevealLiteSpoilersCfgPanelApplet.prototype.setData = function revealLiteSpoilersApplet_setData(enabled, config) {
         CfgPanelApplet.prototype.setData.apply(this, arguments) // call to super()
         this.chkOnHover.prop('checked', config.revealOnHover ? 'checked' : null)
+        this.chkInCurrent.prop('checked', config.revealInCurrentComment ? 'checked' : null)
         this.chkAlways.prop('checked', config.alwaysReveal ? 'checked' : null)
     }
 
     RevealLiteSpoilersCfgPanelApplet.prototype.getEnabled = function revealLiteSpoilersApplet_getEnabled() {
-        return this.chkOnHover.is(':checked') || this.chkAlways.is(':checked')
+        return this.chkOnHover.is(':checked') || this.chkAlways.is(':checked') || this.chkInCurrent.is(':checked')
     }
 
     RevealLiteSpoilersCfgPanelApplet.prototype.getConfig = function revealLiteSpoilersApplet_getConfig() {
         var cfg = CfgPanelApplet.prototype.getConfig.apply(this, arguments) // call to super()
 
         cfg.revealOnHover = this.chkOnHover.is(':checked')
+        cfg.revealInCurrentComment = this.chkInCurrent.is(':checked')
         cfg.alwaysReveal = this.chkAlways.is(':checked')
 
         return cfg
@@ -1315,6 +1388,7 @@ define(['app'], function(App) {
         .add('alter-links-to-mirrors', { defaultEnabled:true,  cfgPanel:{column:1} })
         .add('reveal-lite-spoilers',   { defaultEnabled:false, cfgPanel:{column:1} })
         .add('spacebar-move-to-next',  { defaultEnabled:false, cfgPanel:{column:2} })
+        .add('fav-as-icon',            { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',              { defaultEnabled:true,  cfgPanel:{column:2} },
             "• Новый модульный движок<br/>• Совместимость с новым Табуном"
         )
