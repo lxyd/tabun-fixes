@@ -794,6 +794,11 @@ define(function() {
 })
 
 define('add-onclick-to-spoilers', [])
+/**
+ * Этот модуль добавляет пустой атрибут onclik к заголовкам спойлеров,
+ * чтобы VimFx воспринимал спойлеры как кликабельный объект и давал
+ * кликать по ним без мышки, с помощью клавиатуры
+ */
 define(['jquery', 'module', 'ls-hook'], function($, Module, lsHook) {
 
     function AddOnClickToSpoilersModule() {
@@ -805,18 +810,39 @@ define(['jquery', 'module', 'ls-hook'], function($, Module, lsHook) {
         this._hook = this.onDataLoaded.bind(this)
         lsHook.add('ls_comments_load_after', this._hook)
         lsHook.add('ls_userfeed_get_more_after', this._hook)
-        $('.spoiler-title').attr('onclick', '')
+
+        this.addAttr()
     }
 
     AddOnClickToSpoilersModule.prototype.detach = function addOnClickToSpoilers_detach() {
         lsHook.remove('ls_comments_load_after', this._hook)
         lsHook.remove('ls_userfeed_get_more_after', this._hook)
         this._hook = null
-        $('.spoiler-title').attr('onclick', null)
+
+        this.removeAttr()
     }
 
     AddOnClickToSpoilersModule.prototype.onDataLoaded = function addOnClickToSpoilers_onDataLoaded() {
-        $('.spoiler-title').attr('onclick', '')
+        this.addAttr()
+    }
+
+    AddOnClickToSpoilersModule.prototype.addAttr = function addOnClickToSpoilers_addAttr() {
+        $('.spoiler-title').each(function() {
+            if (!this.hasAttribute('onclick')) {
+                this.setAttribute('onclick', '')
+            }
+        })
+    }
+
+    AddOnClickToSpoilersModule.prototype.removeAttr = function addOnClickToSpoilers_removeAttr() {
+        // в старой версии табуна спойлеры создавались с onclick="return true;"
+        // соответственно, из этих спойлеров удалять атрибут не будем: удаляем только
+        // пустые атрибуты, созданные этим плагином
+        $('.spoiler-title').each(function() {
+            if (this.getAttribute('onclick') == '') {
+                this.removeAttribute('onclick')
+            }
+        })
     }
 
     return AddOnClickToSpoilersModule
@@ -1365,6 +1391,32 @@ define(['jquery', 'module', 'app', 'basic-cfg-panel-applet', 'img/gear'], functi
 
 })
 
+define('fast-scroll-to-comment', [])
+define(['jquery', 'module', 'hook'], function($, Module, hook) {
+
+    function FastScrollToCommentModule() {
+    }
+
+    FastScrollToCommentModule.prototype = new Module()
+
+    FastScrollToCommentModule.prototype.attach = function fastScrollToComment_attach(config) {
+        this._hook = this.onGoToComment.bind(this)
+        hook.add('ls.comments.goToNextComment', this._hook)
+    }
+
+    FastScrollToCommentModule.prototype.detach = function fastScrollToComment_detach() {
+        hook.remove('ls.comments.goToNextComment', this._hook)
+        this._hook = null
+    }
+
+    FastScrollToCommentModule.prototype.onGoToComment = function fastScrollToComment_onGoToComment() {
+        $(window).stop(true)
+    }
+
+    return FastScrollToCommentModule
+
+})
+
 define('fav-as-icon', [])
 define(['jquery', 'module', 'img/star-big-checked', 'img/star-big-unchecked', 'img/star-small-checked', 'img/star-small-unchecked'], function($, Module, imgStarBigChecked, imgStarBigUnchecked, imgStarSmallChecked, imgStarSmallUnchecked) {
     function FavAsIconModule() { }
@@ -1409,6 +1461,10 @@ define(['jquery', 'module', 'img/star-big-checked', 'img/star-big-unchecked', 'i
 })
 
 define('ls-hook', [])
+/**
+ * Эмулируем несколько хуков livestreet CMS, нужных для работы скрипта,
+ * но недоступных в новой версии табуна
+ */
 define(['hook'], function(hook) {
 
     /* {
@@ -1455,7 +1511,6 @@ define(['hook'], function(hook) {
 
     function createWrapper(fn) {
         return function hookXhr(xhr) {
-            console.log('call wrapped function')
             var callback = xhr.success
 
             xhr.success = function callbackProxy() {
@@ -1511,6 +1566,64 @@ define(['hook'], function(hook) {
         add:    addLsHook,
         remove: removeLsHook,
     }
+})
+
+define('narrow-tree', [])
+define(['jquery', 'module', 'basic-cfg-panel-applet'], function($, Module, BasicCfgPanelApplet) {
+
+    function NarrowTreeModule() {
+    }
+
+    NarrowTreeModule.prototype = new Module()
+
+    NarrowTreeModule.prototype.getLabel = function narrowTree_getLabel() {
+        return "Уменьшить ширину лесенки комментов"
+    }
+
+    NarrowTreeModule.prototype.attach = function narrowTree_attach(config) {
+        config = this.ensureConfig(config)
+
+        var style = '.comment-wrapper';
+        for (var i = 1; i < config.maxTreeWidth; i++) {
+            style += ' .comment-wrapper';
+        }
+        this._style = $('<style>').text(
+            style + ' { padding-left: 0 !important } '
+        ).appendTo(document.head);
+    }
+
+    NarrowTreeModule.prototype.detach = function narrowTree_detach() {
+        if (this._style) {
+            this._style.remove()
+        }
+        this._style = null
+    }
+
+    NarrowTreeModule.prototype.ensureConfig = function narrowTree_ensureConfig(config) {
+        config = config || {}
+
+        config.maxTreeWidth = parseInt(config.maxTreeWidth, 10)
+        if (isNaN(config.maxTreeWidth) || config.maxTreeWidth < 10 || config.maxTreeWidth > 1000) {
+            config.maxTreeWidth = 60
+        }
+
+        this.saveConfig(config)
+
+        return config
+    }
+
+    NarrowTreeModule.prototype.createCfgPanelApplet = function narrowTree_createCfgPanelApplet() {
+        var txtMax = $('<input>')
+            .attr('type', 'number')
+            .attr('name', 'maxTreeWidth')
+            .css({
+                width: 40
+             })
+        return new BasicCfgPanelApplet(this.getLabel(), " до ", txtMax, " вложений")
+    }
+
+    return NarrowTreeModule
+
 })
 
 define('reveal-lite-spoilers', [])
@@ -1735,9 +1848,7 @@ define(['jquery', 'module'], function($, Module) {
     }
 
     SpacebarMoveToNextModule.prototype.goToNext = function spacebarMoveToNext_goToNext() {
-        if ($.fn.stop) {
-            $(window).stop(true)
-        }
+        $(window).stop(true)
         if ($('#update-comments').length) { // we are on comments
             return ls.comments.goToNextComment()
         } else {
@@ -1829,12 +1940,14 @@ define(['app'], function(App) {
 
     new App('tabun-fixes')
         .add('cfg-panel',               { defaultEnabled:true })
-        .add('add-onclick-to-spoilers', { defaultEnabled:true, cfgPanel:{column:1} })
+        .add('add-onclick-to-spoilers', { defaultEnabled:true })
+        .add('fast-scroll-to-comment',  { defaultEnabled:true })
         .add('alter-same-page-links',   { defaultEnabled:true,  cfgPanel:{column:1} })
         .add('alter-links-to-mirrors',  { defaultEnabled:true,  cfgPanel:{column:1} })
         .add('reveal-lite-spoilers',    { defaultEnabled:false, cfgPanel:{column:1} })
         .add('spacebar-move-to-next',   { defaultEnabled:false, cfgPanel:{column:2} })
         .add('fav-as-icon',             { defaultEnabled:false, cfgPanel:{column:2} })
+        .add('narrow-tree',             { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
             "• Новый модульный движок<br/>• Совместимость с новым Табуном"
         )
