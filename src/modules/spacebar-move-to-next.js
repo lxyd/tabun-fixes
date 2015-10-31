@@ -31,9 +31,7 @@ define(['jquery', 'module'], function($, Module) {
     }
 
     SpacebarMoveToNextModule.prototype.goToNext = function spacebarMoveToNext_goToNext() {
-        if ($.fn.stop) {
-            $(window).stop(true)
-        }
+        $(window).stop(true)
         if ($('#update-comments').length) { // we are on comments
             return ls.comments.goToNextComment()
         } else {
