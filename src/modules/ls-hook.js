@@ -13,6 +13,8 @@ define(['hook'], function(hook) {
      */
     var hookMaps = {}
 
+    var global = this
+
     var afterXhrHooks = {
         'ls_comments_load_after':     'ls.comments.load',
         'ls_userfeed_get_more_after': 'ls.userfeed.getMore',
@@ -48,13 +50,18 @@ define(['hook'], function(hook) {
 
     function createWrapper(fn) {
         return function hookXhr(xhr) {
-            var callback = xhr.success
-
-            xhr.success = function callbackProxy() {
-                xhr.success = callback
-                callback.apply(this, arguments)
-                fn.apply(this, arguments)
+            var interval = 4
+            function checkXhrReady() {
+                if (xhr.readyState >= XMLHttpRequest.DONE || xhr.readyState <= XMLHttpRequest.UNSENT) {
+                    fn.call(global, xhr, xhr.responseJSON)
+                    return
+                }
+                setTimeout(checkXhrReady, interval)
+                if (interval < 512) {
+                    interval *= 2
+                }
             }
+            checkXhrReady()
         }
     }
 
