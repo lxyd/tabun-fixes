@@ -9,10 +9,10 @@ define(function() {
     //     },
     // }]
     var cfg = {
-            before: []
-          , after: []
-          , orig: []
-          , proxies: []
+            before: [],
+            after: [],
+            orig: [],
+            proxies: [],
         }
 
     var global = this
@@ -22,7 +22,7 @@ define(function() {
      *  function available at root.path
      *
      *  @param root   - optional, global object if ommited
-     *  @param path   - path to root's field (currently only simple field name is supported)
+     *  @param path   - path to root's field
      *  @param fn     - function to execute before (after) root.path
      *                  if fn returns false, execution is terminated
      *  @param options {
@@ -74,7 +74,7 @@ define(function() {
      *  Remove previously added hook
      *
      *  @param root   - optional, global object if ommited
-     *  @param path   - path to root's field (currently only simple field name is supported)
+     *  @param path   - path to root's field
      *  @param fn     - function to execute before (after) root.path
      *                  if fn returns false, execution is terminated
      *  @param options {
@@ -90,22 +90,15 @@ define(function() {
 
         removeCfgElement(options.after ? cfg.after : cfg.before, root, path, fn)
 
-        if (getCfg(cfg.after, root, path).length + getCfg(cfg.before, root, path).length == 0) {
+        if ((getCfg(cfg.after, root, path)||[]).length + (getCfg(cfg.before, root, path)||[]).length == 0) {
             removeAllHooks(root, path)
         }
     }
 
     function removeAllHooks(root, path) {
-        if (typeof root == 'string') {
-            path = root
-            root = global
-        }
-        if (!root) {
-            root = global
-        }
-        if (!path) {
-            throw new Error("Path must not be empty")
-        }
+        var args = parseArgs.apply(this, arguments)
+        root = args.root
+        path = args.path
 
         removeCfg(cfg.before, root, path)
         removeCfg(cfg.after, root, path)
@@ -141,6 +134,15 @@ define(function() {
             options = { after: options }
         } else {
             options = options || {}
+        }
+
+        var p = path.split('.')
+        for (var i = 0; i < p.length-1; i++) {
+            root = root[p[i]]
+            path = p[i+1]
+            if (!root) {
+                throw new Error("Path not found: " + p[i])
+            }
         }
 
         return {
