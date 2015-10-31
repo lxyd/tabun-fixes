@@ -13,7 +13,6 @@ define(['app'], function(App) {
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
             "• Новый модульный движок<br/>• Совместимость с новым Табуном"
         )
-        //.add('fix-scroll',             { defaultEnabled:true, cfgPanel:{skip:true} })
         .start()
 
 })
