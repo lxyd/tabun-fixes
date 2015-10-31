@@ -154,6 +154,7 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
 
     RevealLiteSpoilersCfgPanelApplet.prototype.setData = function revealLiteSpoilersApplet_setData(enabled, config) {
         CfgPanelApplet.prototype.setData.apply(this, arguments) // call to super()
+        config = config || {}
         this.chkOnHover.prop('checked', config.revealOnHover ? 'checked' : null)
         this.chkInCurrent.prop('checked', config.revealInCurrentComment ? 'checked' : null)
         this.chkAlways.prop('checked', config.alwaysReveal ? 'checked' : null)
@@ -165,6 +166,7 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
 
     RevealLiteSpoilersCfgPanelApplet.prototype.getConfig = function revealLiteSpoilersApplet_getConfig() {
         var cfg = CfgPanelApplet.prototype.getConfig.apply(this, arguments) // call to super()
+        cfg = cfg || {}
 
         cfg.revealOnHover = this.chkOnHover.is(':checked')
         cfg.revealInCurrentComment = this.chkInCurrent.is(':checked')

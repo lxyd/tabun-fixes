@@ -42,6 +42,7 @@ define(['jquery', 'deep', 'cfg-panel-applet'], function($, deep, CfgPanelApplet)
     BasicCfgPanelApplet.prototype.getConfig = function basicCfgPanelApplet_getConfig() {
         var res = CfgPanelApplet.prototype.getConfig.apply(this, arguments) // call to super()
 
+        res = res || {}
         this._ui.find('INPUT[name],TEXTAREA[name]').each(function() {
             var el = $(this)
             res[el.attr('name')] = getVal(el)
