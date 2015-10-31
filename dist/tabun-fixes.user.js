@@ -12,8 +12,10 @@
 // @match    http://tabun.everypony.ru/*
 // @include  http://tabun.everypony.info/*
 // @match    http://tabun.everypony.info/*
-// @include  http://табун.всепони.рф/*
-// @match    http://табун.всепони.рф/*
+// @include  https://tabun.everypony.ru/*
+// @match    https://tabun.everypony.ru/*
+// @include  https://tabun.everypony.info/*
+// @match    https://tabun.everypony.info/*
 // @author   eeyup
 // ==/UserScript==
 
