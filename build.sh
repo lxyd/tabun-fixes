@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 
 # 1. meta
 
-cat src/meta.js > out/$NAME.meta.js
+cat src/meta.js > dist/$NAME.meta.js
 
 
 # 2. script itself
@@ -35,7 +35,7 @@ function add_image() {
 
 # 2.1. bare script for testing purposes
 
-OUT=out/$NAME.bare.js
+OUT=dist/$NAME.bare.js
 
 cat src/define.js                     > "$OUT"
 
@@ -56,7 +56,7 @@ add_module "src/start.js" "$OUT"
 
 # 2.2. main output file
 
-OUT=out/$NAME.user.js
+OUT=dist/$NAME.user.js
 
 cat src/meta.js                       > "$OUT"
 
@@ -64,7 +64,7 @@ echo                                 >> "$OUT"
 cat src/head                         >> "$OUT"
 
 echo                                 >> "$OUT"
-cat out/$NAME.bare.js                >> "$OUT"
+cat dist/$NAME.bare.js                >> "$OUT"
 
 echo                                 >> "$OUT"
 cat src/tail                         >> "$OUT"

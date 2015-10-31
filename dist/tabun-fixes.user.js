@@ -3,8 +3,8 @@
 // @version    30
 // @description    Автообновление комментов, возможность выбрать формат дат, а также добавление таймлайна комментов и несколько мелких улучшений для табуна. И всё это - с графическим конфигом!
 //
-// @updateURL https://github.com/lxyd/tabun-fixes/raw/master/out/tabun-fixes.meta.js
-// @downloadURL https://github.com/lxyd/tabun-fixes/raw/master/out/tabun-fixes.user.js
+// @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
+// @downloadURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.user.js
 //
 // @grant none
 //
