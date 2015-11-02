@@ -17,8 +17,9 @@ define(['jquery', 'module', 'img/star-big-checked', 'img/star-big-unchecked', 'i
             '.table-talk .favourite.active:before   { ' + genFavBeforeStyle(17, 17, imgStarBigChecked)     + ' }' +
 
             '.comment-info .favourite { ' + genFavStyle(11, 11) + ' }' +
-            '.topic-info .favourite   { ' + genFavStyle(11, 11) + '; padding:0 !important; margin:6px 11px 6px 0px }' +
-            '.table-talk .favourite   { ' + genFavStyle(17, 17) + ' }'
+            '.topic-info .favourite   { ' + genFavStyle(11, 11) + ' }' +
+            '.table-talk .favourite   { ' + genFavStyle(17, 17) + ' }' +
+            '.topic-info-favourite.favourite { padding:0 !important; margin:6px 11px 6px 0px }'
         ).appendTo(document.head)
     }
 
