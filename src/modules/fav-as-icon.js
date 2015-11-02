@@ -22,7 +22,7 @@ define(['jquery', 'module', 'img/star-big-checked', 'img/star-big-unchecked', 'i
         ).appendTo(document.head)
     }
 
-    FavAsIconModule.prototype.detach = function favAsIcon_detach(сonfig) {
+    FavAsIconModule.prototype.detach = function favAsIcon_detach() {
         if (this.style) {
             this.style.remove()
         }
