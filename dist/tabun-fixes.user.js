@@ -1445,7 +1445,7 @@ define(['jquery', 'module', 'img/star-big-checked', 'img/star-big-unchecked', 'i
         ).appendTo(document.head)
     }
 
-    FavAsIconModule.prototype.detach = function favAsIcon_detach(сonfig) {
+    FavAsIconModule.prototype.detach = function favAsIcon_detach() {
         if (this.style) {
             this.style.remove()
         }
@@ -1461,6 +1461,178 @@ define(['jquery', 'module', 'img/star-big-checked', 'img/star-big-unchecked', 'i
     }
 
     return FavAsIconModule
+})
+
+define('favicon-unread-count', [])
+define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon) {
+
+    function FaviconUnreadCountModule() { }
+
+    FaviconUnreadCountModule.prototype = new Module()
+
+    FaviconUnreadCountModule.prototype.getLabel = function faviconUnreadCount_getLabel() {
+        return "В иконке сайта показывать кол-во непрочитанных комментов"
+    }
+
+    FaviconUnreadCountModule.prototype.attach = function faviconUnreadCount_attach(config) {
+        this.onTick = this.updateFavicon.bind(this)
+        this.data = this.prepareData()
+        this.interval = setInterval(this.onTick, 1000)
+        this.updateFavicon()
+    }
+
+    FaviconUnreadCountModule.prototype.detach = function faviconUnreadCount_detach() {
+        if (this.interval) {
+            clearInterval(this.interval)
+        }
+        delete this.interval
+        delete this.onTick
+
+        // revert favicon
+        if (this.data) {
+            this.data.eFavLink.setAttribute('href', this.data.bakHref)
+            reAttachEl(this.data.eFavLink)
+        }
+        delete this.data
+    }
+
+    FaviconUnreadCountModule.prototype.prepareData = function faviconUnreadCount_prepareCanvas() {
+        var eFavLink = document.head.querySelector('LINK[rel~="icon"]')
+          , bakHref = eFavLink.getAttribute('href')
+          , eFavicon = new Image()
+          , curCnt = 0
+          , eCanvas = document.createElement('canvas')
+          , ctx = eCanvas.getContext('2d')
+          , dimen = 64
+          , pad = 4
+          , fontSizeNormal = -1
+          , fontSize100 = -1
+          , fontSizeMoreThan100 = -1
+
+        eCanvas.setAttribute('width', dimen)
+        eCanvas.setAttribute('height', dimen)
+
+        // calculate font sizes
+        for (var s = 32; s > 0; s--) {
+            setFontSize(ctx, s)
+            if (fontSizeNormal == -1 && ctx.measureText("'00").width < dimen - 2*pad) {
+                fontSizeNormal = s
+            }
+            if (fontSize100 == -1 && ctx.measureText("100").width < dimen - 2*pad) {
+                fontSize100 = s
+            }
+            if (ctx.measureText(">100").width < dimen - 2*pad) {
+                fontSizeMoreThan100 = s
+                break
+            }
+        }
+
+        eFavicon.onload = this.updateFavicon.bind(this)
+        eFavicon.src = imgFavicon
+
+        return {
+            bakHref:             bakHref,
+            eFavLink:            eFavLink,
+            eFavicon:            eFavicon,
+            eCanvas:             eCanvas,
+            ctx:                 ctx,
+            fontSizeNormal:      fontSizeNormal,
+            fontSize100:         fontSize100,
+            fontSizeMoreThan100: fontSizeMoreThan100,
+            dimen:               dimen,
+            pad:                 pad,
+        }
+    }
+
+
+    FaviconUnreadCountModule.prototype.updateFavicon = function faviconUnreadCount_updateFavicon() {
+        var cnt = getCountToDisplay()
+        if (cnt != this.data.curCnt) {
+            this.data.curCnt = cnt
+            this.redraw()
+        }
+    }
+
+    FaviconUnreadCountModule.prototype.redraw = function faviconUnreadCount_redraw() {
+        var w = this.data.eFavicon.width
+          , h = this.data.eFavicon.height
+          , dimen = this.data.dimen
+          , curCnt = this.data.curCnt
+
+        this.data.ctx.clearRect(0, 0, dimen, dimen)
+
+        if (w > 0 && h > 0) {
+            // draw favicon
+            this.data.ctx.scale(dimen/w, dimen/h)
+            this.data.ctx.drawImage(this.data.eFavicon, 0, 0)
+            this.data.ctx.scale(w/dimen, h/dimen)
+        }
+
+        // draw text
+        if (curCnt == 0) {
+            // do nothing
+        } else if (curCnt < 100) {
+            this.drawCnt(curCnt, this.data.fontSizeNormal)
+        } else if (curCnt == 100) {
+            this.drawCnt(curCnt, this.data.fontSize100)
+        } else {
+            this.drawCnt(">100", this.data.fontSizeMoreThan100)
+        }
+
+        // force browser to redraw
+        this.data.eFavLink.setAttribute('href', this.data.eCanvas.toDataURL())
+        reAttachEl(this.data.eFavLink)
+    }
+
+    FaviconUnreadCountModule.prototype.drawCnt = function faviconUnreadCount_drawCnt(sCnt, fontSize) {
+        var ctx = this.data.ctx
+          , dimen = this.data.dimen
+          , pad = this.data.pad
+
+        setFontSize(ctx, fontSize)
+        var m = ctx.measureText(sCnt)
+
+        ctx.fillStyle = "rgba(255,255,255,0.8)"
+
+        ctx.fillRect(dimen - 2*pad - m.width, dimen - 2*pad - fontSize, m.width + 2*pad, fontSize + 2*pad)
+
+        ctx.fillStyle = "black"
+        ctx.shadowColor = "white"
+        ctx.shadowOffsetX = -2
+        ctx.shadowOffsetY = -2
+        ctx.shadowBlur = 5
+        ctx.fillText(sCnt, dimen - pad - m.width, dimen - pad)
+    }
+
+    function setFontSize(ctx, size) {
+        ctx.font = size + 'pt Sans'
+    }
+
+    function reAttachEl(e) {
+        var eNext = e.nextSibling
+          , eParent = e.parentNode
+        eParent.removeChild(e)
+        if (eNext) {
+            eParent.insertBefore(e, eNext)
+        } else {
+            eParent.appendChild(e)
+        }
+    }
+
+    function getCountToDisplay() {
+        var el = document.getElementById('new_comments_counter')
+        if (!el) {
+            return 0
+        }
+        if (el && el.offsetWidth) {
+            return parseInt(el.textContent.trim())
+        } else {
+            return 0
+        }
+    }
+
+    return FaviconUnreadCountModule
+
 })
 
 define('ls-hook', [])
@@ -1937,6 +2109,8 @@ define(['jquery', 'module', 'app', 'cfg-panel-applet'], function($, Module, App,
 
 })
 
+define('img/favicon', [], 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnklEQVQ4y6VTwQnDMAw8mS7RQQolUzR0zYRuUQIZJGNcHomIaisWjQ/8MNKdTpYs2EGS+AMiIgAgV8hWJIXksT8NkSRYw/BihBRWtHfHza1q+/4I2ygdvD8HuXtuR4U0diow9ttRskJF1IlxlH7ITgW3PZMn7hhzF98JWGa3QClgH0x7X+byjapT0CQVy+/5NrUsEsKMQKT5M0nrd14BXnj9gc+qGlMAAAAASUVORK5CYII=')
+
 define('img/gear', [], 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACHUlEQVQ4y62Sv0vVYRTGn3Pe9/3ebsEdcnBpqCiKK9wkIzKStMFF6AcW1VBkg2sN+g/k0uDQ1FZSBDokmYjrNYgMUfMamWlDoEuDi0P33u/7nvc0xA1Nb0ud6Zzn/ODw4QH+MehvzaGpUicRulV1oKe9eX23Gf5TeFJcyNbyxJr2jLO91phCTXtaXGio+8GzN6UHRNQdVa8R0UY2cc+d4c6qD4MVHwYIuEFMj2LUu3fOnxgBALv1QOLshjWclxhnCYTEmqw1DIX2gdDLRDkmKleDLNVl8HpuZYyJLimwScBDAOsKFADcI4ILEvuvnDo2WJeBqrYwk1fVtjTIcMWHbBAZIOA2gRCjduxgMDRVKhimR86axr0ZlwcwmXq5HFXXiNCoiuL11vyF8fnVNYnxQCUNZR9kSaJ2WQBwlg9lnO1IrIFhRhpkUzRaZ34xSIM0AECMWk6sARNlU8O5Suq3MxifXz3IRKU0CNIQDifWFpzh7mqQxyIxl3F22ll+39V8pHVXBhdPHv0mMY4YphwTTfsg+ys+DInEc8w0QQT4IJN1ffDi7ceWfXuSaWeMkxjhg0AVICY4wzDMqPpQ/lFNz9xqKyzu+MAw9zIRANxnorbE2WImsUisGWWiJgD9hska5s5dvT/87pMbnVnO1+qx2ZW+iQ9f9dXsl56a9nJmuXHrzjYn3jzb5AH8dpkPsghgLg3yuaZdPX38O/5n/ASdNN+15exi2wAAAABJRU5ErkJggg==')
 
 define('img/star-big-checked', [], 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAYAAAA7bUf6AAACNklEQVQ4y52TPWtUQRSGn5k7dy9rNhvBTYpgDLqKElYiqE0aSSGx8ReIoE1WQ0BBQe0sBbWyun60YmNpYxcwhUJA4YpFEElwA5JNdpNsdu/XzFjsLiYkROPAA2fOHN7DzHkH9liBjzRzp64FPnKvOrmHgCiODBeFdJ4dLh4Z+C8RQCovcwNkLtfXezPwcfYtcrDQ1+M47lWQSJW5Arj7Egl8xMDgoUtCOv0IiZCqeOLM6YnAR/yzSP9gocdxM3fax22Ud+AWoHarF+bjwGOEcxEUQjojCOUiFG1c/sQdUCBUauE7OGDTd/LHfO2p0SwIKUZBulu7g2D7XoKQIIQSwj1p0vDrQvDpiTM5YWT1V+NDLp9VynXPg8PfkTrcWH0+PzfzMIladWfqMimQ1FcaXzzPrWS87AWsdLCSNg7dWBiNTZrherVyf/Hb51dAFWiKrjOBLFAYPjY0ne3J321fxYDVYOIOLRqN8P7PpeZrYAUIS2WMAiiVMYFPE1hVOhoyjSWwKVizYxIZwVGgBrRKZey2EXcShmjjrAlDTJRiYrMDtD0H6K7ADp/059SgTfRxE2tMrInD9H21Hl9PwnS2myPRo72ezO9qtsBHethxk2h0rCtrzXR6sZbcrrf0zEItmdxopvd0opdNolXeFeNbf/ZWByqhzVic8mI5ti8TwxKwBiRAZrll3ngRswVPTAkYA962X367iFiL7aN1zSawCTSApFTGBj4REEWGZqVlH/Q5ZDtOBOA3IsECgTKeLKoAAAAASUVORK5CYII=')
@@ -1959,6 +2133,7 @@ define(['app'], function(App) {
         .add('reveal-lite-spoilers',    { defaultEnabled:false, cfgPanel:{column:1} })
         .add('spacebar-move-to-next',   { defaultEnabled:false, cfgPanel:{column:2} })
         .add('fav-as-icon',             { defaultEnabled:false, cfgPanel:{column:2} })
+        .add('favicon-unread-count'  ,  { defaultEnabled:true,  cfgPanel:{column:2} })
         .add('narrow-tree',             { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
             "• Новый модульный движок<br/>• Совместимость с новым Табуном"
