@@ -80,6 +80,9 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
 
 
     FaviconUnreadCountModule.prototype.updateFavicon = function faviconUnreadCount_updateFavicon() {
+        if (!this.data) {
+            return
+        }
         var cnt = getCountToDisplay()
         if (cnt != this.data.curCnt) {
             this.data.curCnt = cnt
