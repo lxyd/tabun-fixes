@@ -23,7 +23,7 @@ define(['jquery', 'module'], function($, Module) {
             // ignore input fields (as in https://github.com/ccampbell/mousetrap/blob/master/mousetrap.js)
             return
         }
-        if (ev.which == KeyEvent.DOM_VK_SPACE) {
+        if (ev.which == 32 /* space */) {
             if (this.goToNext()) {
                 ev.preventDefault()
             }
