@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.2
+// @version    30.3
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -1668,6 +1668,33 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
 
 })
 
+define('fix-aside-toolbar', [])
+define(['jquery', 'module'], function($, Module) {
+    function FixAsideToolbarModule() { }
+
+    FixAsideToolbarModule.prototype = new Module()
+
+    FixAsideToolbarModule.prototype.getLabel = function fixAsideToolbar_getLabel() {
+        return "Починить расположение боковой панели"
+    }
+
+    FixAsideToolbarModule.prototype.attach = function fixAsideToolbar_attach(config) {
+        this._style = $('<style>').text(
+                'ASIDE.toolbar { width: 1; height: 1; overflow: visible; } ' +
+                'ASIDE.toolbar SECTION { position: fixed; right: 0; top: 30%; }'
+        ).appendTo(document.head)
+    }
+
+    FixAsideToolbarModule.prototype.detach = function fixAsideToolbar_detach() {
+        if (this._style) {
+            this._style.remove()
+        }
+        delete this._style
+    }
+
+    return FixAsideToolbarModule
+})
+
 define('format-date', [])
 /**
  * Переформатирует дату/время, представленную в виде строки isoDateTime, например 2013-02-06T23:01:33+04:00
@@ -2554,6 +2581,7 @@ define(['app'], function(App) {
         .add('favicon-unread-count'  ,  { defaultEnabled:true,  cfgPanel:{column:2} })
         .add('narrow-tree',             { defaultEnabled:false, cfgPanel:{column:2} })
         .add('img-alt-to-title',        { defaultEnabled:false, cfgPanel:{column:2} })
+        .add('fix-aside-toolbar',       { defaultEnabled:true,  cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
             "• Новый модульный движок<br/>"+
             "• Совместимость с новым Табуном<br/>"+
