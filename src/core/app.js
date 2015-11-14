@@ -72,7 +72,9 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
 
         this._started = true // больше нельзя вызвать add и start, зато можно делать всё остальное
 
-        this._loadData()
+        var data = this._loadData()
+        this._configs = data.configs
+        this._enabled = data.enabled
 
         for (var id in this._modules) {
             var moduleInfo = this._modules[id]
@@ -187,6 +189,18 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
         }
     }
 
+    App.prototype.reconfigure = function app_reconfigure() {
+        this._checkStarted(true)
+
+        data = this._loadData()
+        for (id in data.enabled) {
+            this.setModuleEnabled(id, data.enabled[id])
+        }
+        for (id in data.configs) {
+            this.setModuleConfig(id, data.configs[id])
+        }
+    }
+
     App.prototype.getId = function app_getId() {
         return this._id
     }
@@ -212,15 +226,19 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
     }
 
     App.prototype._loadData = function app_loadData() {
+        var data
         try {
-            var data = JSON.parse(localStorage.getItem(this._id + '-data') || "{}") || {}
-            this._configs = data.configs || {}
-            this._enabled = data.enabled || {}
+            data = JSON.parse(localStorage.getItem(this._id + '-data') || "{}") || {}
+            data.configs = data.configs || {}
+            data.enabled = data.enabled || {}
         } catch (err) {
             this.log(err)
-            this._configs = {}
-            this._enabled = {}
+            data = {
+                configs: {},
+                enabled: {},
+            }
         }
+        return data
     }
 
     App.prototype._saveData = function app_saveData() {
