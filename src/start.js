@@ -4,6 +4,7 @@ define(['app'], function(App) {
         .add('cfg-panel',               { defaultEnabled:true })
         .add('add-onclick-to-spoilers', { defaultEnabled:true })
         .add('fast-scroll-to-comment',  { defaultEnabled:true })
+        .add('sync-config-among-tabs',  { defaultEnabled:true })
         .add('alter-same-page-links',   { defaultEnabled:true,  cfgPanel:{column:1} })
         .add('alter-links-to-mirrors',  { defaultEnabled:true,  cfgPanel:{column:1} })
         .add('reveal-lite-spoilers',    { defaultEnabled:false, cfgPanel:{column:1} })
