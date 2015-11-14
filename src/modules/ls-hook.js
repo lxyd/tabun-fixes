@@ -10,7 +10,7 @@ define(function() {
     }
     var interval
       , global = this
-      , lastUnreadCommentsCount = getUnreadCommentsCount()
+      , lastCommentsCount = getCommentsCount()
       , lastArticlesCount = getArticlesCount()
 
     function addLsHook(key, fn) {
@@ -43,15 +43,20 @@ define(function() {
     }
 
     function checkAndInvoke() {
-        var articlesCount = getArticlesCount()
-          , unreadCommentCount = getUnreadCommentsCount()
-        if (articlesCount > lastArticlesCount) {
-            lastArticlesCount = articlesCount
-            invokeHook('ls_userfeed_get_more_after')
+        if (hooks.ls_userfeed_get_more_after.length) {
+            var articlesCount = getArticlesCount()
+            if (articlesCount > lastArticlesCount) {
+                lastArticlesCount = articlesCount
+                invokeHook('ls_userfeed_get_more_after')
+            }
         }
-        if (unreadCommentCount > lastUnreadCommentsCount) {
-            lastUnreadCommentsCount = unreadCommentCount
-            invokeHook('ls_comments_load_after')
+
+        if (hooks.ls_comments_load_after.length) {
+            var commentCount = getCommentsCount()
+            if (commentCount > lastCommentsCount) {
+                lastCommentsCount = commentCount
+                invokeHook('ls_comments_load_after')
+            }
         }
     }
 
@@ -65,13 +70,8 @@ define(function() {
         return document.getElementsByTagName('article').length
     }
 
-    function getUnreadCommentsCount() {
-        var el = document.getElementById('new_comments_counter')
-        if (el && el.offsetWidth) {
-            return parseInt(el.textContent.trim())
-        } else {
-            return 0
-        }
+    function getCommentsCount() {
+        return document.getElementsByClassName('comment').length
     }
 
     return {
