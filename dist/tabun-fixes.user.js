@@ -329,10 +329,14 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
 
         data = this._loadData()
         for (id in data.enabled) {
-            this.setModuleEnabled(id, data.enabled[id])
+            if (this._modules[id]) {
+                this.setModuleEnabled(id, data.enabled[id])
+            }
         }
         for (id in data.configs) {
-            this.setModuleConfig(id, data.configs[id])
+            if (this._modules[id]) {
+                this.setModuleConfig(id, data.configs[id])
+            }
         }
     }
 
@@ -902,7 +906,7 @@ define(['module'], function(Module) {
         document.addEventListener('click', this.handler, true)
     }
 
-    AlterLinksToMirrorsModule.prototype.detach = function alterLinksToMirrors_detach(сonfig) {
+    AlterLinksToMirrorsModule.prototype.detach = function alterLinksToMirrors_detach() {
         document.removeEventListener('click', this.handler, true)
         this.handler = null
     }
@@ -990,7 +994,7 @@ define(['module'], function(Module) {
             .appendTo(document.head)
     }
 
-    AlterSamePageLinksModule.prototype.detach = function alterSamePageLinks_detach(сonfig) {
+    AlterSamePageLinksModule.prototype.detach = function alterSamePageLinks_detach() {
         document.removeEventListener('click', this.clickHandler, true)
         document.removeEventListener('mouseover', this.mouseOverHandler)
         document.removeEventListener('mouseout', this.mouseOutHandler)
@@ -1720,6 +1724,91 @@ define(function() {
     }
 })
 
+define('img-alt-to-title', [])
+define(['jquery', 'module', 'ls-hook'], function($, Module, lsHook) {
+    function ImgAltToTitleModule() { }
+
+    ImgAltToTitleModule.prototype = new Module()
+
+    ImgAltToTitleModule.prototype.init = function imgAltToTitle_init(config) {
+        this.attrName = this.getApp() + '-' + this.getId() + '-data'
+        return config
+    }
+
+    ImgAltToTitleModule.prototype.getLabel = function imgAltToTitle_getLabel() {
+        return "Показывать атрибуты ALT у картинок всплывающими подсказками"
+    }
+
+    ImgAltToTitleModule.prototype.attach = function imgAltToTitle_attach(config) {
+        this.processPage()
+
+        this._hook = this.processPage.bind(this)
+
+        lsHook.add('ls_comments_load_after', this._hook)
+        lsHook.add('ls_userfeed_get_more_after', this._hook)
+    }
+
+    ImgAltToTitleModule.prototype.detach = function imgAltToTitle_detach() {
+        lsHook.remove('ls_comments_load_after', this._hook)
+        lsHook.remove('ls_userfeed_get_more_after', this._hook)
+
+        delete this._hook
+
+        this.unprocessPage()
+    }
+
+    ImgAltToTitleModule.prototype.processPage = function imgAltToTitle_processPage() {
+        var self = this
+          , cfg = self.getConfig()
+
+        $('IMG[alt]').each(function() {
+            var el = $(this)
+
+            if (!el.data(self.attrName)) {
+                var origTitle = el.attr('title')
+                  , alt = (el.attr('alt')||'').trim()
+                  , title = (origTitle||'').trim()
+
+                el.data(self.attrName, {
+                    origTitle: origTitle,
+                })
+
+                if (!alt) {
+                    return
+                }
+
+                if (title) {
+                    title = alt + '(' + title + ')'
+                } else {
+                    title = alt
+                }
+
+                el.attr('title', title)
+            }
+        })
+    }
+
+    ImgAltToTitleModule.prototype.unprocessPage = function imgAltToTitle_unprocessPage() {
+        var self = this
+
+        $('IMG[alt]').each(function() {
+            var el = $(this)
+              , data = el.data(self.attrName)
+
+            if (data) {
+                if (data.origTitle == null) {
+                    el.removeAttr('title')
+                } else {
+                    el.attr('title', data.origTitle)
+                }
+                el.removeData(self.attrName)
+            }
+        })
+    }
+
+    return ImgAltToTitleModule
+})
+
 define('ls-hook', [])
 /**
  * Эмулируем несколько хуков livestreet CMS, нужных для работы скрипта,
@@ -1925,7 +2014,7 @@ define(['jquery', 'module', 'cfg-panel-applet'], function($, Module, CfgPanelApp
         $(document).on('click', '.spoiler-title', this.clickHandler)
     }
 
-    OpenNestedSpoilersModule.prototype.detach = function openNestedSpoilers_detach(сonfig) {
+    OpenNestedSpoilersModule.prototype.detach = function openNestedSpoilers_detach() {
         delete this._spoilerBodyIsVisibleOnMouseDown
         delete this._timeMouseDown
         if (this.mouseDownHandler) {
@@ -2070,7 +2159,7 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'format-date', 'ls-hook'],
         return config
     }
 
-    ReformatDatesModule.prototype.getLabel = function reformatDates_getLabel(config) {
+    ReformatDatesModule.prototype.getLabel = function reformatDates_getLabel() {
         return "Сменить формат дат"
     }
 
@@ -2083,7 +2172,7 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'format-date', 'ls-hook'],
         lsHook.add('ls_userfeed_get_more_after', this._hook)
     }
 
-    ReformatDatesModule.prototype.detach = function reformatDates_detach(config) {
+    ReformatDatesModule.prototype.detach = function reformatDates_detach() {
         lsHook.remove('ls_comments_load_after', this._hook)
         lsHook.remove('ls_userfeed_get_more_after', this._hook)
 
@@ -2167,7 +2256,7 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
         }
     }
 
-    RevealLiteSpoilersModule.prototype.detach = function revealLiteSpoilers_detach(сonfig) {
+    RevealLiteSpoilersModule.prototype.detach = function revealLiteSpoilers_detach() {
         if (this._style) {
             this._style.remove()
             this._style = null
@@ -2345,7 +2434,7 @@ define(['jquery', 'module'], function($, Module) {
         document.addEventListener('keypress', this.handler)
     }
 
-    SpacebarMoveToNextModule.prototype.detach = function spacebarMoveToNext_detach(сonfig) {
+    SpacebarMoveToNextModule.prototype.detach = function spacebarMoveToNext_detach() {
         document.removeEventListener('keypress', this.handler)
         this.handler = null
     }
@@ -2395,7 +2484,7 @@ define(['module'], function(Module) {
 
     SyncConfigAmongTabsModule.prototype = new Module()
 
-    SyncConfigAmongTabsModule.prototype.attach = function syncConfigAmongTabs_attach() {
+    SyncConfigAmongTabsModule.prototype.attach = function syncConfigAmongTabs_attach(config) {
         this.onWindowFocus = this.syncConfig.bind(this)
         window.addEventListener('focus', this.onWindowFocus)
     }
@@ -2431,7 +2520,7 @@ define(['jquery', 'module', 'app', 'cfg-panel-applet'], function($, Module, App,
         return config
     }
 
-    WhatsNewModule.prototype.attach = function whatsNew_apply(config) {
+    WhatsNewModule.prototype.attach = function whatsNew_attach(config) {
         if (this._alertText) {
             alert(this._alertText)
         }
@@ -2493,6 +2582,7 @@ define(['app'], function(App) {
         .add('fav-as-icon',             { defaultEnabled:false, cfgPanel:{column:2} })
         .add('favicon-unread-count'  ,  { defaultEnabled:true,  cfgPanel:{column:2} })
         .add('narrow-tree',             { defaultEnabled:false, cfgPanel:{column:2} })
+        .add('img-alt-to-title',        { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
             "• Новый модульный движок<br/>• Совместимость с новым Табуном"
         )
