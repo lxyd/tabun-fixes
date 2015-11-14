@@ -1657,6 +1657,69 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
 
 })
 
+define('format-date', [])
+/**
+ * Переформатирует дату/время, представленную в виде строки isoDateTime, например 2013-02-06T23:01:33+04:00
+ * в требуемый формат. Допустимые элементы формата:
+ * - yyyy, yy - год (четыре или две цифры)
+ * - M, MM, MMM, MMMM - месяц (одна/две цифры или сокращённое/полное название)
+ * - d, dd - день
+ * - H, HH - час
+ * - m, mm - минуты
+ * - s, ss - секунды
+ *
+ * @param strDate - дата в формате isoDateTime
+ * @param strFormat - строка формата
+ * @param bToLocal - конвертировать ли дату в локальную из той зоны, в которой она представлена
+ *
+ * @return переформатированные дату/время
+ */
+define(function() {
+    var aMonthsLong = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']
+      , aMonthsShort = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек']
+
+    function padIntWithZero(x) {
+        return x < 10 ? '0' + x : '' + x
+    }
+
+    return function formatDate(strDate, strFormat, bToLocalDate) {
+        var arr
+        if (!bToLocalDate) {
+            arr = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/.exec(strDate)
+        } else {
+            var d = new Date(strDate)
+            arr = [
+                null,
+                '' + d.getFullYear(),
+                padIntWithZero(d.getMonth() + 1),
+                padIntWithZero(d.getDate()),
+                padIntWithZero(d.getHours()),
+                padIntWithZero(d.getMinutes()),
+                padIntWithZero(d.getSeconds()),
+                padIntWithZero(d.getMilliseconds()),
+            ]
+        }
+        return strFormat.replace(/yyyy|yy|MMMM|MMM|MM|M|dd|d|HH|H|mm|m|ss|s/g, function(pattern) {
+            switch (pattern) {
+                case 'yyyy': return arr[1]
+                case 'yy'  : return arr[1].substring(2)
+                case 'MMMM': return aMonthsLong[parseInt(arr[2], 10)-1]
+                case 'MMM' : return aMonthsShort[parseInt(arr[2], 10)-1]
+                case 'MM'  : return arr[2]
+                case 'M'   : return parseInt(arr[2], 10)
+                case 'dd'  : return arr[3]
+                case 'd'   : return parseInt(arr[3], 10)
+                case 'HH'  : return arr[4]
+                case 'H'   : return parseInt(arr[4], 10)
+                case 'mm'  : return arr[5]
+                case 'm'   : return parseInt(arr[5], 10)
+                case 'ss'  : return arr[6]
+                case 's'   : return parseInt(arr[6], 10)
+            }
+        })
+    }
+})
+
 define('ls-hook', [])
 /**
  * Эмулируем несколько хуков livestreet CMS, нужных для работы скрипта,
@@ -1991,6 +2054,90 @@ define(['jquery', 'module', 'cfg-panel-applet'], function($, Module, CfgPanelApp
     }
 
     return OpenNestedSpoilersModule
+})
+
+define('reformat-dates', [])
+define(['jquery', 'module', 'basic-cfg-panel-applet', 'format-date', 'ls-hook'], function($, Module, BasicCfgPanelApplet, formatDate, lsHook) {
+    function ReformatDatesModule() { }
+
+    ReformatDatesModule.prototype = new Module()
+
+    ReformatDatesModule.prototype.init = function reformatDates_init(config) {
+        config = config || {
+            format: 'd MMM yyyy, H:mm:ss',
+        }
+        this.attrName = this.getApp() + '-' + this.getId() + '-data'
+        return config
+    }
+
+    ReformatDatesModule.prototype.getLabel = function reformatDates_getLabel(config) {
+        return "Сменить формат дат"
+    }
+
+    ReformatDatesModule.prototype.attach = function reformatDates_attach(config) {
+        this.processPage()
+
+        this._hook = this.processPage.bind(this)
+
+        lsHook.add('ls_comments_load_after', this._hook)
+        lsHook.add('ls_userfeed_get_more_after', this._hook)
+    }
+
+    ReformatDatesModule.prototype.detach = function reformatDates_detach(config) {
+        lsHook.remove('ls_comments_load_after', this._hook)
+        lsHook.remove('ls_userfeed_get_more_after', this._hook)
+
+        delete this._hook
+
+        this.unprocessPage()
+    }
+
+    ReformatDatesModule.prototype.processPage = function reformatDates_processPage() {
+        var self = this
+          , cfg = self.getConfig()
+
+        $('[datetime]').each(function() {
+            var el = $(this)
+
+            if (!el.data(self.attrName) && !el.children().length) {
+                el.data(self.attrName, {
+                    origText: el.text(),
+                })
+                el.text(formatDate(el.attr('datetime'), cfg.format, false))
+            }
+        })
+    }
+
+    ReformatDatesModule.prototype.unprocessPage = function reformatDates_unprocessPage() {
+        var self = this
+
+        $('[datetime]').each(function() {
+            var el = $(this)
+              , data = el.data(self.attrName)
+
+            if (data) {
+                el.text(data.origText)
+                el.removeData(self.attrName)
+            }
+        })
+    }
+
+    ReformatDatesModule.prototype.createCfgPanelApplet = function reformatDates_createCfgPanelApplet() {
+        var txtFormat = $('<input>')
+            .attr('type', 'text')
+            .attr('name', 'format')
+            .css({
+                width: 150,
+             })
+
+        return new BasicCfgPanelApplet(this.getLabel(), ": ", txtFormat, "<br/>",
+                '<p style="padding-left: 20px">Формат — это строка вроде "d MMMM yyyy, HH:mm", где:<br/>' +
+                'yyyy, yy — год (2011 или 11)<br/>' +
+                'MMMM, MMM, MM, M — месяц (августа, авг, 08, 8)<br/>' +
+                'dd, d, HH, H, mm, m, ss, s — день, часы, минуты, секунды (09 или 9)</p>')
+    }
+
+    return ReformatDatesModule
 })
 
 define('reveal-lite-spoilers', [])
@@ -2341,6 +2488,7 @@ define(['app'], function(App) {
         .add('alter-links-to-mirrors',  { defaultEnabled:true,  cfgPanel:{column:1} })
         .add('reveal-lite-spoilers',    { defaultEnabled:false, cfgPanel:{column:1} })
         .add('open-nested-spoilers',    { defaultEnabled:false, cfgPanel:{column:1} })
+        .add('reformat-dates',          { defaultEnabled:false, cfgPanel:{column:1} })
         .add('spacebar-move-to-next',   { defaultEnabled:false, cfgPanel:{column:2} })
         .add('fav-as-icon',             { defaultEnabled:false, cfgPanel:{column:2} })
         .add('favicon-unread-count'  ,  { defaultEnabled:true,  cfgPanel:{column:2} })
