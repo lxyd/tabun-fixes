@@ -2,111 +2,75 @@
  * Эмулируем несколько хуков livestreet CMS, нужных для работы скрипта,
  * но недоступных в новой версии табуна
  */
-define(['hook'], function(hook) {
+define(function() {
 
-    /* {
-     *     name: [{
-     *         key: key,
-     *         val: val,
-     *     }]
-     * }
-     */
-    var hookMaps = {}
-
-    var global = this
-
-    var afterXhrHooks = {
-        'ls_comments_load_after':     ['ls.comments.load', 'ls.comments.add'],
-        'ls_userfeed_get_more_after': ['ls.userfeed.getMore'],
+    var hooks = {
+        ls_comments_load_after: [],
+        ls_userfeed_get_more_after: [],
     }
+    var interval
+      , global = this
+      , lastUnreadCommentsCount = getUnreadCommentsCount()
+      , lastArticlesCount = getArticlesCount()
 
-    function addLsHook(name, fn) {
-        if (name in afterXhrHooks) {
-            addAfterXhrHook(name, fn)
-        } else {
-            throw new Error("Unsupported livestreet hook '" + name + "'")
+    function addLsHook(key, fn) {
+        hooks[key].push(fn)
+        if (!interval) {
+            interval = setInterval(checkAndInvoke, 100)
         }
     }
 
-    function removeLsHook(name, fn) {
-        if (name in afterXhrHooks) {
-            removeAfterXhrHook(name, fn)
-        }
-    }
-
-    function addAfterXhrHook(name, fn) {
-        var wrap = createWrapper(fn)
-        addWrapper(name, fn, wrap)
-
-        afterXhrHooks[name].forEach(function(fnPath) {
-            hook.add(fnPath, wrap, true)
-        })
-    }
-
-    function removeAfterXhrHook(name, fn) {
-        var wrap = getWrapper(name, fn)
-        removeWrapper(name, fn)
-
-        afterXhrHooks[name].forEach(function(fnPath) {
-            hook.remove(fnPath, wrap, true)
-        })
-    }
-
-    function createWrapper(fn) {
-        return function hookXhr(xhr) {
-            var interval = 4
-            function checkXhrReady() {
-                if (xhr.readyState >= XMLHttpRequest.DONE || xhr.readyState <= XMLHttpRequest.UNSENT) {
-                    fn.call(global, xhr, xhr.responseJSON)
-                    return
-                }
-                setTimeout(checkXhrReady, interval)
-                if (interval < 512) {
-                    interval *= 2
-                }
-            }
-            checkXhrReady()
-        }
-    }
-
-    function addWrapper(name, fn, wrap) {
-        hookMaps[name] = hookMaps[name] || []
-        hookMaps[name].push({
-            key: fn,
-            val: wrap,
-        })
-    }
-
-    function getWrapper(name, fn) {
-        var map = hookMaps[name]
-        if (!map) {
-            return null
-        }
-        for (var i = 0; i < map.length; i++) {
-            if (map[i].key === fn) {
-                return map[i].val
-            }
-        }
-        return null
-    }
-
-    function removeWrapper(name, fn) {
-        var map = hookMaps[name]
-        if (!map) {
-            return
-        }
-        var idx = -1
-        for (var i = 0; i < map.length; i++) {
-            if (map[i].key === fn) {
-                idx = i
-                break
-            }
-        }
+    function removeLsHook(key, fn) {
+        var idx = hooks[key].indexOf(fn)
         if (idx >= 0) {
-            map.splice(idx, 1)
+            hooks[key].splice(idx, 1)
         }
-        if (map.length == 0) {
-            delete hookMaps[name]
+        if (interval && !hasHooks()) {
+            clearInterval(interval)
+            interval = null
+        }
+    }
+
+    function hasHooks() {
+        var sum = 0
+          , key
+
+        for (key in hooks) {
+            sum += hooks[key].length
+        }
+
+        return sum > 0
+    }
+
+    function checkAndInvoke() {
+        var articlesCount = getArticlesCount()
+          , unreadCommentCount = getUnreadCommentsCount()
+        if (articlesCount > lastArticlesCount) {
+            lastArticlesCount = articlesCount
+            invokeHook('ls_userfeed_get_more_after')
+        }
+        if (unreadCommentCount > lastUnreadCommentsCount) {
+            lastUnreadCommentsCount = unreadCommentCount
+            invokeHook('ls_comments_load_after')
+        }
+    }
+
+    function invokeHook(name) {
+        (hooks[name]||[]).forEach(function(fn) {
+            fn.call(global)
+        })
+    }
+
+    function getArticlesCount() {
+        return document.getElementsByTagName('article').length
+    }
+
+    function getUnreadCommentsCount() {
+        var el = document.getElementById('new_comments_counter')
+        if (el && el.offsetWidth) {
+            return parseInt(el.textContent.trim())
+        } else {
+            return 0
         }
     }
 
