@@ -31,7 +31,7 @@ define(['module'], function(Module) {
         document.addEventListener('click', this.handler, true)
     }
 
-    AlterLinksToMirrorsModule.prototype.detach = function alterLinksToMirrors_detach(сonfig) {
+    AlterLinksToMirrorsModule.prototype.detach = function alterLinksToMirrors_detach() {
         document.removeEventListener('click', this.handler, true)
         this.handler = null
     }

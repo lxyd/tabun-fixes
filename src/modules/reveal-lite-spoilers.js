@@ -24,7 +24,7 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
         }
     }
 
-    RevealLiteSpoilersModule.prototype.detach = function revealLiteSpoilers_detach(сonfig) {
+    RevealLiteSpoilersModule.prototype.detach = function revealLiteSpoilers_detach() {
         if (this._style) {
             this._style.remove()
             this._style = null

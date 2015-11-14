@@ -16,7 +16,7 @@ define(['jquery', 'module', 'app', 'cfg-panel-applet'], function($, Module, App,
         return config
     }
 
-    WhatsNewModule.prototype.attach = function whatsNew_apply(config) {
+    WhatsNewModule.prototype.attach = function whatsNew_attach(config) {
         if (this._alertText) {
             alert(this._alertText)
         }

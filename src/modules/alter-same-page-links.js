@@ -34,7 +34,7 @@ define(['module'], function(Module) {
             .appendTo(document.head)
     }
 
-    AlterSamePageLinksModule.prototype.detach = function alterSamePageLinks_detach(сonfig) {
+    AlterSamePageLinksModule.prototype.detach = function alterSamePageLinks_detach() {
         document.removeEventListener('click', this.clickHandler, true)
         document.removeEventListener('mouseover', this.mouseOverHandler)
         document.removeEventListener('mouseout', this.mouseOutHandler)

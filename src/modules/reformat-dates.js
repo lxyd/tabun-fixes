@@ -11,7 +11,7 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'format-date', 'ls-hook'],
         return config
     }
 
-    ReformatDatesModule.prototype.getLabel = function reformatDates_getLabel(config) {
+    ReformatDatesModule.prototype.getLabel = function reformatDates_getLabel() {
         return "Сменить формат дат"
     }
 
@@ -24,7 +24,7 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'format-date', 'ls-hook'],
         lsHook.add('ls_userfeed_get_more_after', this._hook)
     }
 
-    ReformatDatesModule.prototype.detach = function reformatDates_detach(config) {
+    ReformatDatesModule.prototype.detach = function reformatDates_detach() {
         lsHook.remove('ls_comments_load_after', this._hook)
         lsHook.remove('ls_userfeed_get_more_after', this._hook)
 

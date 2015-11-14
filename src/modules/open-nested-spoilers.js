@@ -25,7 +25,7 @@ define(['jquery', 'module', 'cfg-panel-applet'], function($, Module, CfgPanelApp
         $(document).on('click', '.spoiler-title', this.clickHandler)
     }
 
-    OpenNestedSpoilersModule.prototype.detach = function openNestedSpoilers_detach(сonfig) {
+    OpenNestedSpoilersModule.prototype.detach = function openNestedSpoilers_detach() {
         delete this._spoilerBodyIsVisibleOnMouseDown
         delete this._timeMouseDown
         if (this.mouseDownHandler) {

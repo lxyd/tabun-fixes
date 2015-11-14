@@ -3,7 +3,7 @@ define(['module'], function(Module) {
 
     SyncConfigAmongTabsModule.prototype = new Module()
 
-    SyncConfigAmongTabsModule.prototype.attach = function syncConfigAmongTabs_attach() {
+    SyncConfigAmongTabsModule.prototype.attach = function syncConfigAmongTabs_attach(config) {
         this.onWindowFocus = this.syncConfig.bind(this)
         window.addEventListener('focus', this.onWindowFocus)
     }

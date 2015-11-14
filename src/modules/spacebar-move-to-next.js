@@ -12,7 +12,7 @@ define(['jquery', 'module'], function($, Module) {
         document.addEventListener('keypress', this.handler)
     }
 
-    SpacebarMoveToNextModule.prototype.detach = function spacebarMoveToNext_detach(сonfig) {
+    SpacebarMoveToNextModule.prototype.detach = function spacebarMoveToNext_detach() {
         document.removeEventListener('keypress', this.handler)
         this.handler = null
     }
