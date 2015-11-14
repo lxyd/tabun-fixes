@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30
+// @version    30.1
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -2548,7 +2548,9 @@ define(['app'], function(App) {
         .add('narrow-tree',             { defaultEnabled:false, cfgPanel:{column:2} })
         .add('img-alt-to-title',        { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
-            "• Новый модульный движок<br/>• Совместимость с новым Табуном"
+            "• Новый модульный движок<br/>"+
+            "• Совместимость с новым Табуном<br/>"+
+            "• Перенесено большинство фич старого tabun-fixes"
         )
         .start()
 
