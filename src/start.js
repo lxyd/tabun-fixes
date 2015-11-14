@@ -14,6 +14,7 @@ define(['app'], function(App) {
         .add('fav-as-icon',             { defaultEnabled:false, cfgPanel:{column:2} })
         .add('favicon-unread-count'  ,  { defaultEnabled:true,  cfgPanel:{column:2} })
         .add('narrow-tree',             { defaultEnabled:false, cfgPanel:{column:2} })
+        .add('img-alt-to-title',        { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
             "• Новый модульный движок<br/>• Совместимость с новым Табуном"
         )
