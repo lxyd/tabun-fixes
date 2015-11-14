@@ -49,6 +49,13 @@ define(['module'], function(Module) {
     }
 
     AlterSamePageLinksModule.prototype.onClick = function alterSamePageLinks_onClick(ev) {
+        if (
+                ev.which != null && ev.which != 1 ||
+                ev.button != null && ev.button != 0
+        ) {
+            return
+        }
+
         var a = closestAnchor(ev.target)
           , id = getLinkedCommentId(a)
 
