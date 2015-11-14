@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.1
+// @version    30.2
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -1009,6 +1009,13 @@ define(['module'], function(Module) {
     }
 
     AlterSamePageLinksModule.prototype.onClick = function alterSamePageLinks_onClick(ev) {
+        if (
+                ev.which != null && ev.which != 1 ||
+                ev.button != null && ev.button != 0
+        ) {
+            return
+        }
+
         var a = closestAnchor(ev.target)
           , id = getLinkedCommentId(a)
 
