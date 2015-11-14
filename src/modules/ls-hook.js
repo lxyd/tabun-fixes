@@ -16,8 +16,8 @@ define(['hook'], function(hook) {
     var global = this
 
     var afterXhrHooks = {
-        'ls_comments_load_after':     'ls.comments.load',
-        'ls_userfeed_get_more_after': 'ls.userfeed.getMore',
+        'ls_comments_load_after':     ['ls.comments.load', 'ls.comments.add'],
+        'ls_userfeed_get_more_after': ['ls.userfeed.getMore'],
     }
 
     function addLsHook(name, fn) {
@@ -38,14 +38,18 @@ define(['hook'], function(hook) {
         var wrap = createWrapper(fn)
         addWrapper(name, fn, wrap)
 
-        hook.add(afterXhrHooks[name], wrap, true)
+        afterXhrHooks[name].forEach(function(fnPath) {
+            hook.add(fnPath, wrap, true)
+        })
     }
 
     function removeAfterXhrHook(name, fn) {
         var wrap = getWrapper(name, fn)
         removeWrapper(name, fn)
 
-        hook.remove(afterXhrHooks[name], wrap, true)
+        afterXhrHooks[name].forEach(function(fnPath) {
+            hook.remove(fnPath, wrap, true)
+        })
     }
 
     function createWrapper(fn) {
