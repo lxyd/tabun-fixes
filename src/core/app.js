@@ -194,10 +194,14 @@ define(['module', 'deep', 'require'], function(Module, deep, require) {
 
         data = this._loadData()
         for (id in data.enabled) {
-            this.setModuleEnabled(id, data.enabled[id])
+            if (this._modules[id]) {
+                this.setModuleEnabled(id, data.enabled[id])
+            }
         }
         for (id in data.configs) {
-            this.setModuleConfig(id, data.configs[id])
+            if (this._modules[id]) {
+                this.setModuleConfig(id, data.configs[id])
+            }
         }
     }
 
