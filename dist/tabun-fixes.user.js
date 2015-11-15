@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.5
+// @version    30.6
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -983,7 +983,7 @@ define(['module'], function(Module) {
         this.clickHandler = this.onClick.bind(this)
         this.mouseOverHandler = this.onMouseOver.bind(this)
         this.mouseOutHandler = this.onMouseOut.bind(this)
-        document.addEventListener('click', this.clickHandler, true)
+        document.addEventListener('click', this.clickHandler)
         document.addEventListener('mouseover', this.mouseOverHandler)
         document.addEventListener('mouseout', this.mouseOutHandler)
 
@@ -995,7 +995,7 @@ define(['module'], function(Module) {
     }
 
     AlterSamePageLinksModule.prototype.detach = function alterSamePageLinks_detach() {
-        document.removeEventListener('click', this.clickHandler, true)
+        document.removeEventListener('click', this.clickHandler)
         document.removeEventListener('mouseover', this.mouseOverHandler)
         document.removeEventListener('mouseout', this.mouseOutHandler)
         this.clickHandler = null
