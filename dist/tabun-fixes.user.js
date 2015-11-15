@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.4
+// @version    30.5
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -1021,6 +1021,10 @@ define(['module'], function(Module) {
 
         if (!isSamePageComment(id)) {
             return
+        }
+
+        if (ev.defaultPrevented) {
+            return // something has already handled this event
         }
 
         // TODO : remove this line
