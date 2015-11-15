@@ -63,6 +63,10 @@ define(['module'], function(Module) {
             return
         }
 
+        if (ev.defaultPrevented) {
+            return // something has already handled this event
+        }
+
         // TODO : remove this line
         window.location.hash = "comment" + id
 
