@@ -39,7 +39,10 @@ define(function() {
                 padIntWithZero(d.getMilliseconds()),
             ]
         }
-        return strFormat.replace(/yyyy|yy|MMMM|MMM|MM|M|dd|d|HH|H|mm|m|ss|s/g, function(pattern) {
+        return strFormat.replace(/(?:\\([\\yMdHms]))|(yyyy|yy|MMMM|MMM|MM|M|dd|d|HH|H|mm|m|ss|s)/g, function(whole, escaped, pattern) {
+            if (escaped) {
+                return escaped
+            }
             switch (pattern) {
                 case 'yyyy': return arr[1]
                 case 'yy'  : return arr[1].substring(2)
