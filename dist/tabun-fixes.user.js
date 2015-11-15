@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.3
+// @version    30.4
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -1737,7 +1737,10 @@ define(function() {
                 padIntWithZero(d.getMilliseconds()),
             ]
         }
-        return strFormat.replace(/yyyy|yy|MMMM|MMM|MM|M|dd|d|HH|H|mm|m|ss|s/g, function(pattern) {
+        return strFormat.replace(/(?:\\([\\yMdHms]))|(yyyy|yy|MMMM|MMM|MM|M|dd|d|HH|H|mm|m|ss|s)/g, function(whole, escaped, pattern) {
+            if (escaped) {
+                return escaped
+            }
             switch (pattern) {
                 case 'yyyy': return arr[1]
                 case 'yy'  : return arr[1].substring(2)
@@ -2190,7 +2193,7 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'format-date', 'ls-hook'],
                 el.data(self.attrName, {
                     origText: el.text(),
                 })
-                el.text(formatDate(el.attr('datetime'), cfg.format, false))
+                el.html(formatDate(el.attr('datetime'), cfg.format, false))
             }
         })
     }
@@ -2221,7 +2224,8 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'format-date', 'ls-hook'],
                 '<p style="padding-left: 20px">Формат — это строка вроде "d MMMM yyyy, HH:mm", где:<br/>' +
                 'yyyy, yy — год (2011 или 11)<br/>' +
                 'MMMM, MMM, MM, M — месяц (августа, авг, 08, 8)<br/>' +
-                'dd, d, HH, H, mm, m, ss, s — день, часы, минуты, секунды (09 или 9)</p>')
+                'dd, d, HH, H, mm, m, ss, s — день, часы, минуты, секунды (09 или 9)<br/>' +
+                'Используйте \\ если нужны буквы y,M,d,H,m,s: \\M, \\s и т.д.</p>')
     }
 
     return ReformatDatesModule
