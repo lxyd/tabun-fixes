@@ -44,7 +44,7 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'format-date', 'ls-hook'],
                 el.data(self.attrName, {
                     origText: el.text(),
                 })
-                el.text(formatDate(el.attr('datetime'), cfg.format, false))
+                el.html(formatDate(el.attr('datetime'), cfg.format, false))
             }
         })
     }
@@ -75,7 +75,8 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'format-date', 'ls-hook'],
                 '<p style="padding-left: 20px">Формат — это строка вроде "d MMMM yyyy, HH:mm", где:<br/>' +
                 'yyyy, yy — год (2011 или 11)<br/>' +
                 'MMMM, MMM, MM, M — месяц (августа, авг, 08, 8)<br/>' +
-                'dd, d, HH, H, mm, m, ss, s — день, часы, минуты, секунды (09 или 9)</p>')
+                'dd, d, HH, H, mm, m, ss, s — день, часы, минуты, секунды (09 или 9)<br/>' +
+                'Используйте \\ если нужны буквы y,M,d,H,m,s: \\M, \\s и т.д.</p>')
     }
 
     return ReformatDatesModule
