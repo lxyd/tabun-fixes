@@ -7,10 +7,11 @@ define(['jquery', 'module', 'app', 'cfg-panel-applet'], function($, Module, App,
     WhatsNewModule.prototype.init = function whatsNew_init(config, text) {
         config = config || {}
 
-        if (config.text != text) {
+        if (config.installed && config.text != text) {
             this._alertText = "Юзерскрипт tabun-fixes обновился!\nЧто нового:\n" + $("<p>").html(text.replace(/\<br\/?\>/g, "\n")).text()
         }
 
+        config.installed = true
         config.text = text
 
         return config
