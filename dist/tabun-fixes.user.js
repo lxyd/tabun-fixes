@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.6
+// @version    30.7
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -1104,6 +1104,129 @@ define(['module'], function(Module) {
     }
 
     return AlterSamePageLinksModule
+})
+
+define('autospoiler-images', [])
+define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Module, BasicCfgPanelApplet, lsHook) {
+    function AutospoilerImagesModule() { }
+
+    AutospoilerImagesModule.prototype = new Module()
+
+    AutospoilerImagesModule.prototype.init = function autospoilerImages_init(config) {
+        config = config || {
+            width: 1000,
+            height: 500,
+        }
+        this.attrName = this.getApp() + '-' + this.getId() + '-data'
+        return config
+    }
+
+    AutospoilerImagesModule.prototype.getLabel = function autospoilerImages_getLabel() {
+        return "Автоматически скрывать картинки"
+    }
+
+    AutospoilerImagesModule.prototype.attach = function autospoilerImages_attach(config) {
+        this.processPage()
+
+        this._hook = this.processPage.bind(this)
+
+        lsHook.add('ls_comments_load_after', this._hook)
+        lsHook.add('ls_userfeed_get_more_after', this._hook)
+    }
+
+    AutospoilerImagesModule.prototype.detach = function autospoilerImages_detach() {
+        return false
+
+        // TODO : uncomment this
+        // lsHook.remove('ls_comments_load_after', this._hook)
+        // lsHook.remove('ls_userfeed_get_more_after', this._hook)
+
+        // delete this._hook
+
+        // this.unprocessPage()
+    }
+
+    AutospoilerImagesModule.prototype.processPage = function autospoilerImages_processPage() {
+        $('IMG').not('.spoiler IMG').each(function(_, e) {
+            // HACK: XXX: 40 px is arbitrary non-loaded image width
+            // TODO: implement more reliable way to determine not loaded image
+            if (e.width > 40 || e.height > 40) {
+                this.processImage(e)
+            } else {
+                // either wait for full load
+                // or just let the img element find out the image's size
+                this.waitForImage(e)
+            }
+        }.bind(this))
+    }
+
+    AutospoilerImagesModule.prototype.unprocessPage = function autospoilerImages_unprocessPage() {
+        // TODO : implement this
+    }
+
+    AutospoilerImagesModule.prototype.waitForImage = function autospoilerImages_waitForImage(e) {
+        var timeout = setTimeout(function() {
+                this.processImage(e)
+            }.bind(this), 1000)
+          , loadListener = function() {
+                clearTimeout(timeout)
+                this.processImage(e)
+            }.bind(this)
+
+        e.addEventListener('load', loadListener)
+    }
+
+    AutospoilerImagesModule.prototype.processImage = function autospoilerImages_processImage(e) {
+        // HACK: prevent rare double-spoilering
+        if ($(e).is('.spoiler IMG')) {
+            return
+        }
+
+        var cfg = this.getConfig()
+
+        if (e.width > cfg.width) {
+            spoiler(e, 'ширина ' + e.width + 'px')
+        } else if (e.height > cfg.height) {
+            spoiler(e, 'высота ' + e.height + 'px')
+        }
+    }
+
+    function spoiler(img, reason) {
+        var spoilerBody
+        $(img).after(
+            $('<SPAN>')
+                .attr('class', 'spoiler')
+                .append(
+                    $('<SPAN>')
+                        .attr('class', 'spoiler-title')
+                        .attr('onclick', '')
+                        .text('[КАРТИНКА (' + reason + ')]'),
+                    spoilerBody = $('<SPAN>')
+                        .attr('class', 'spoiler-body')
+                        .css({display: 'none'})
+                )
+        )
+        spoilerBody.append(img)
+    }
+
+    AutospoilerImagesModule.prototype.createCfgPanelApplet = function autospoilerImages_createCfgPanelApplet() {
+        var txtWidth = $('<input>')
+            .attr('type', 'text')
+            .attr('name', 'width')
+            .css({
+                width: 50,
+             })
+        var txtHeight = $('<input>')
+            .attr('type', 'text')
+            .attr('name', 'height')
+            .css({
+                width: 50,
+             })
+
+        return new BasicCfgPanelApplet("Автоматически скрывать картинки", " больше", txtWidth, "px шириной или ", txtHeight, "px высотой")
+    }
+
+    return AutospoilerImagesModule
 })
 
 define('basic-cfg-panel-applet', [])
@@ -2590,10 +2713,9 @@ define(['app'], function(App) {
         .add('narrow-tree',             { defaultEnabled:false, cfgPanel:{column:2} })
         .add('img-alt-to-title',        { defaultEnabled:false, cfgPanel:{column:2} })
         .add('fix-aside-toolbar',       { defaultEnabled:true,  cfgPanel:{column:2} })
+        .add('autospoiler-images',      { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
-            "• Новый модульный движок<br/>"+
-            "• Совместимость с новым Табуном<br/>"+
-            "• Перенесено большинство фич старого tabun-fixes"
+            "• Добавлено автоскрытие больших картинок"
         )
         .start()
 
