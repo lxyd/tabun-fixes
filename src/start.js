@@ -16,6 +16,7 @@ define(['app'], function(App) {
         .add('narrow-tree',             { defaultEnabled:false, cfgPanel:{column:2} })
         .add('img-alt-to-title',        { defaultEnabled:false, cfgPanel:{column:2} })
         .add('fix-aside-toolbar',       { defaultEnabled:true,  cfgPanel:{column:2} })
+        .add('autospoiler-images',      { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
             "• Новый модульный движок<br/>"+
             "• Совместимость с новым Табуном<br/>"+
