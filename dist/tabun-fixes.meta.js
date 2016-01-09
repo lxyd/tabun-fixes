@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.8
+// @version    30.9
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js

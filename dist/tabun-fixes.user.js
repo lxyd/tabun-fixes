@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.8
+// @version    30.9
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -1116,13 +1116,14 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Mo
         config = config || {
             width: 1000,
             height: 500,
+            inCommentsOnly: true,
         }
         this.attrName = this.getApp() + '-' + this.getId() + '-data'
         return config
     }
 
     AutospoilerImagesModule.prototype.getLabel = function autospoilerImages_getLabel() {
-        return "Автоматически скрывать картинки"
+        return "Автоматически спойлерить картинки"
     }
 
     AutospoilerImagesModule.prototype.attach = function autospoilerImages_attach(config) {
@@ -1135,15 +1136,12 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Mo
     }
 
     AutospoilerImagesModule.prototype.detach = function autospoilerImages_detach() {
-        return false
+        lsHook.remove('ls_comments_load_after', this._hook)
+        lsHook.remove('ls_userfeed_get_more_after', this._hook)
 
-        // TODO : uncomment this
-        // lsHook.remove('ls_comments_load_after', this._hook)
-        // lsHook.remove('ls_userfeed_get_more_after', this._hook)
+        delete this._hook
 
-        // delete this._hook
-
-        // this.unprocessPage()
+        this.unprocessPage()
     }
 
     AutospoilerImagesModule.prototype.processPage = function autospoilerImages_processPage() {
@@ -1161,7 +1159,13 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Mo
     }
 
     AutospoilerImagesModule.prototype.unprocessPage = function autospoilerImages_unprocessPage() {
-        // TODO : implement this
+        $('SPAN.spoiler').each(function(_, e) {
+            var data = $(e).data(this.attrName)
+            if (data && data.spoileredElement) {
+                e.parentNode.insertBefore(data.spoileredElement, e)
+                e.parentNode.removeChild(e)
+            }
+        }.bind(this))
     }
 
     AutospoilerImagesModule.prototype.waitForImage = function autospoilerImages_waitForImage(e) {
@@ -1181,21 +1185,30 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Mo
         if ($(e).is('.spoiler IMG')) {
             return
         }
+        // HACK: prevent processing image after module is disabled
+        if (!this.isEnabled()) {
+            return
+        }
 
         var cfg = this.getConfig()
 
+        if (cfg.inCommentsOnly && !$(e).is('.comment IMG')) {
+            return
+        }
+
         if (e.width > cfg.width) {
-            spoiler(e, 'ширина ' + e.width + 'px')
+            this.spoiler(e, 'ширина ' + e.width + 'px')
         } else if (e.height > cfg.height) {
-            spoiler(e, 'высота ' + e.height + 'px')
+            this.spoiler(e, 'высота ' + e.height + 'px')
         }
     }
 
-    function spoiler(img, reason) {
+    AutospoilerImagesModule.prototype.spoiler = function autospoilerImages_spoiler(img, reason) {
         var spoilerBody
         $(img).after(
             $('<SPAN>')
                 .attr('class', 'spoiler')
+                .data(this.attrName, { spoileredElement: img })
                 .append(
                     $('<SPAN>')
                         .attr('class', 'spoiler-title')
@@ -1214,16 +1227,25 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Mo
             .attr('type', 'text')
             .attr('name', 'width')
             .css({
-                width: 50,
+                width: 35,
              })
         var txtHeight = $('<input>')
             .attr('type', 'text')
             .attr('name', 'height')
             .css({
-                width: 50,
+                width: 35,
              })
+        var chkInCommentsOnly = $('<input>')
+            .attr('type', 'checkbox')
+            .attr('name', 'inCommentsOnly')
+        var lblInCommentsOnly = $('<label>')
+            .text(' автоспойлерить только в комментариях')
+            .prepend(chkInCommentsOnly)
 
-        return new BasicCfgPanelApplet("Автоматически скрывать картинки", " больше", txtWidth, "px шириной или ", txtHeight, "px высотой")
+        return new BasicCfgPanelApplet(
+                "Автоматически спойлерить картинки", " больше", txtWidth, "px шириной или ", txtHeight, "px высотой",
+                " (&nbsp;", lblInCommentsOnly, ")"
+        )
     }
 
     return AutospoilerImagesModule
