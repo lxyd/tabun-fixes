@@ -26,15 +26,12 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Mo
     }
 
     AutospoilerImagesModule.prototype.detach = function autospoilerImages_detach() {
-        return false
+        lsHook.remove('ls_comments_load_after', this._hook)
+        lsHook.remove('ls_userfeed_get_more_after', this._hook)
 
-        // TODO : uncomment this
-        // lsHook.remove('ls_comments_load_after', this._hook)
-        // lsHook.remove('ls_userfeed_get_more_after', this._hook)
+        delete this._hook
 
-        // delete this._hook
-
-        // this.unprocessPage()
+        this.unprocessPage()
     }
 
     AutospoilerImagesModule.prototype.processPage = function autospoilerImages_processPage() {
@@ -52,7 +49,13 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Mo
     }
 
     AutospoilerImagesModule.prototype.unprocessPage = function autospoilerImages_unprocessPage() {
-        // TODO : implement this
+        $('SPAN.spoiler').each(function(_, e) {
+            var data = $(e).data(this.attrName)
+            if (data && data.spoileredElement) {
+                e.parentNode.insertBefore(data.spoileredElement, e)
+                e.parentNode.removeChild(e)
+            }
+        }.bind(this))
     }
 
     AutospoilerImagesModule.prototype.waitForImage = function autospoilerImages_waitForImage(e) {
@@ -72,21 +75,26 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Mo
         if ($(e).is('.spoiler IMG')) {
             return
         }
+        // HACK: prevent processing image after module is disabled
+        if (!this.isEnabled()) {
+            return
+        }
 
         var cfg = this.getConfig()
 
         if (e.width > cfg.width) {
-            spoiler(e, 'ширина ' + e.width + 'px')
+            this.spoiler(e, 'ширина ' + e.width + 'px')
         } else if (e.height > cfg.height) {
-            spoiler(e, 'высота ' + e.height + 'px')
+            this.spoiler(e, 'высота ' + e.height + 'px')
         }
     }
 
-    function spoiler(img, reason) {
+    AutospoilerImagesModule.prototype.spoiler = function autospoilerImages_spoiler(img, reason) {
         var spoilerBody
         $(img).after(
             $('<SPAN>')
                 .attr('class', 'spoiler')
+                .data(this.attrName, { spoileredElement: img })
                 .append(
                     $('<SPAN>')
                         .attr('class', 'spoiler-title')
