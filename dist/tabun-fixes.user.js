@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.9
+// @version    30.10
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -1145,7 +1145,7 @@ define(['jquery', 'module', 'basic-cfg-panel-applet', 'ls-hook'], function($, Mo
     }
 
     AutospoilerImagesModule.prototype.processPage = function autospoilerImages_processPage() {
-        $('IMG').not('.spoiler IMG').each(function(_, e) {
+        $('IMG').not('.spoiler-body IMG').each(function(_, e) {
             // HACK: XXX: 40 px is arbitrary non-loaded image width
             // TODO: implement more reliable way to determine not loaded image
             if (e.width > 40 || e.height > 40) {
