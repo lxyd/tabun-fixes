@@ -11,8 +11,13 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
     FaviconUnreadCountModule.prototype.attach = function faviconUnreadCount_attach(config) {
         this.onTick = this.updateFavicon.bind(this)
         this.data = this.prepareData()
-        this.interval = setInterval(this.onTick, 1000)
-        this.updateFavicon()
+
+        this.data.eFavicon.onload = function() {
+            this.updateFavicon()
+            this.interval = setInterval(this.onTick, 1000)
+        }.bind(this)
+
+        this.data.eFavicon.src = imgFavicon
     }
 
     FaviconUnreadCountModule.prototype.detach = function faviconUnreadCount_detach() {
@@ -60,9 +65,6 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
                 break
             }
         }
-
-        eFavicon.onload = this.updateFavicon.bind(this)
-        eFavicon.src = imgFavicon
 
         return {
             bakHref:             bakHref,
