@@ -44,9 +44,10 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
           , ctx = eCanvas.getContext('2d')
           , dimen = 64
           , pad = 4
-          , fontSizeNormal = -1
-          , fontSize100 = -1
-          , fontSizeMoreThan100 = -1
+          , fontSizeXX = -1
+          , fontSizeXXX = -1
+          , fontSize1k = -1
+          , fontSizeMoreThan1k = -1
 
         eCanvas.setAttribute('width', dimen)
         eCanvas.setAttribute('height', dimen)
@@ -54,29 +55,35 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
         // calculate font sizes
         for (var s = 32; s > 0; s--) {
             setFontSize(ctx, s)
-            if (fontSizeNormal == -1 && ctx.measureText("'00").width < dimen - 2*pad) {
-                fontSizeNormal = s
+            if (fontSizeXX == -1 && ctx.measureText("'00").width < dimen - 2*pad) {
+                fontSizeXX = s
             }
-            if (fontSize100 == -1 && ctx.measureText("100").width < dimen - 2*pad) {
-                fontSize100 = s
+            if (fontSizeXXX == -1 && ctx.measureText("000").width < dimen - 2*pad) {
+                fontSizeXXX = s
             }
-            if (ctx.measureText(">100").width < dimen - 2*pad) {
-                fontSizeMoreThan100 = s
+            if (fontSize1k == -1 && ctx.measureText("1k").width < dimen - 2*pad) {
+                fontSize1k = s
+            }
+            if (fontSizeMoreThan1k == -1 && ctx.measureText(">1k").width < dimen - 2*pad) {
+                fontSizeMoreThan1k = s
+            }
+            if (fontSizeXX > -1 && fontSizeXXX > -1 && fontSize1k > -1 && fontSizeMoreThan1k > -1) {
                 break
             }
         }
 
         return {
-            bakHref:             bakHref,
-            eFavLink:            eFavLink,
-            eFavicon:            eFavicon,
-            eCanvas:             eCanvas,
-            ctx:                 ctx,
-            fontSizeNormal:      fontSizeNormal,
-            fontSize100:         fontSize100,
-            fontSizeMoreThan100: fontSizeMoreThan100,
-            dimen:               dimen,
-            pad:                 pad,
+            bakHref:            bakHref,
+            eFavLink:           eFavLink,
+            eFavicon:           eFavicon,
+            eCanvas:            eCanvas,
+            ctx:                ctx,
+            fontSizeXX:         fontSizeXX,
+            fontSizeXXX:        fontSizeXXX,
+            fontSize1k:         fontSize1k,
+            fontSizeMoreThan1k: fontSizeMoreThan1k,
+            dimen:              dimen,
+            pad:                pad,
         }
     }
 
@@ -111,11 +118,13 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
         if (curCnt == 0) {
             // do nothing
         } else if (curCnt < 100) {
-            this.drawCnt(curCnt, this.data.fontSizeNormal)
-        } else if (curCnt == 100) {
-            this.drawCnt(curCnt, this.data.fontSize100)
+            this.drawCnt(curCnt, this.data.fontSizeXX)
+        } else if (curCnt < 1000) {
+            this.drawCnt(curCnt, this.data.fontSizeXXX)
+        } else if (curCnt == 1000) {
+            this.drawCnt('1k', this.data.fontSize1k)
         } else {
-            this.drawCnt(">100", this.data.fontSizeMoreThan100)
+            this.drawCnt(">1k", this.data.fontSizeMoreThan1k)
         }
 
         // force browser to redraw
