@@ -9,12 +9,21 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
     }
 
     FaviconUnreadCountModule.prototype.attach = function faviconUnreadCount_attach(config) {
-        this.onTick = this.updateFavicon.bind(this)
+        this.onCheckNeeded = this.checkAndUpdateFavicon.bind(this)
         this.data = this.prepareData()
 
         this.data.eFavicon.onload = function() {
-            this.updateFavicon()
-            this.interval = setInterval(this.onTick, 1000)
+            this.checkAndUpdateFavicon()
+            if (!window.MutationObserver) {
+                this.interval = setInterval(this.onCheckNeeded, 1000)
+            } else {
+                this.observer = new MutationObserver(this.onCheckNeeded)
+
+                var o = document.getElementById('new_comments_counter')
+                if (o) {
+                    this.observer.observe(o, {childList:true,characterData:true,subtree:true})
+                }
+            }
         }.bind(this)
 
         this.data.eFavicon.src = imgFavicon
@@ -24,8 +33,12 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
         if (this.interval) {
             clearInterval(this.interval)
         }
+        if (this.observer) {
+            observer.disconnect()
+        }
         delete this.interval
-        delete this.onTick
+        delete this.observer
+        delete this.onCheckNeeded
 
         // revert favicon
         if (this.data) {
@@ -88,7 +101,7 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
     }
 
 
-    FaviconUnreadCountModule.prototype.updateFavicon = function faviconUnreadCount_updateFavicon() {
+    FaviconUnreadCountModule.prototype.checkAndUpdateFavicon = function faviconUnreadCount_checkAndUpdateFavicon() {
         if (!this.data) {
             return
         }
