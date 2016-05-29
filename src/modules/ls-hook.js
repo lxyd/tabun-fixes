@@ -9,14 +9,55 @@ define(function() {
         ls_userfeed_get_more_after: [],
     }
     var interval
+      , observer
       , global = this
       , lastCommentsCount = getCommentsCount()
       , lastArticlesCount = getArticlesCount()
 
+    function isObserving() {
+        return interval || observer
+    }
+
+    function stopObserving() {
+        if (interval) {
+            clearInterval(interval)
+            interval = null
+        }
+        if (observer) {
+            observer.disconnect()
+            observer = null
+        }
+    }
+
+    function startObserving() {
+        if (!window.MutationObserver) {
+            interval = setInterval(checkAndInvoke, 100)
+        } else {
+            observer = new MutationObserver(checkAndInvoke)
+
+            var o
+
+            o = document.getElementById('userfeed_loaded_topics')
+            if (o) {
+                observer.observe(o, {childList:true})
+            }
+
+            o = document.getElementById('content')
+            if (o) {
+                observer.observe(o, {childList:true})
+            }
+
+            o = document.getElementById('count-comments')
+            if (o) {
+                observer.observe(o, {childList:true,characterData:true,subtree:true})
+            }
+        }
+    }
+
     function addLsHook(key, fn) {
         hooks[key].push(fn)
-        if (!interval) {
-            interval = setInterval(checkAndInvoke, 100)
+        if (!isObserving()) {
+            startObserving()
         }
     }
 
@@ -25,9 +66,8 @@ define(function() {
         if (idx >= 0) {
             hooks[key].splice(idx, 1)
         }
-        if (interval && !hasHooks()) {
-            clearInterval(interval)
-            interval = null
+        if (!hasHooks() && isObserving()) {
+            stopObserving()
         }
     }
 
@@ -43,6 +83,7 @@ define(function() {
     }
 
     function checkAndInvoke() {
+        console.log('check-and-invoke')
         if (hooks.ls_userfeed_get_more_after.length) {
             var articlesCount = getArticlesCount()
             if (articlesCount > lastArticlesCount) {
