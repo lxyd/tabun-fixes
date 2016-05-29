@@ -83,7 +83,6 @@ define(function() {
     }
 
     function checkAndInvoke() {
-        console.log('check-and-invoke')
         if (hooks.ls_userfeed_get_more_after.length) {
             var articlesCount = getArticlesCount()
             if (articlesCount > lastArticlesCount) {
