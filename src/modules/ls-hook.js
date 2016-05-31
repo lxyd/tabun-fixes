@@ -11,8 +11,10 @@ define(function() {
     var interval
       , observer
       , global = this
-      , lastCommentsCount = getCommentsCount()
-      , lastArticlesCount = getArticlesCount()
+      , lastCommentsCount
+      , lastArticlesCount
+      , lastCommentIds = []
+      , lastArticleIds = []
 
     function isObserving() {
         return interval || observer
@@ -52,6 +54,7 @@ define(function() {
                 observer.observe(o, {childList:true,characterData:true,subtree:true})
             }
         }
+        initHooks()
     }
 
     function addLsHook(key, fn) {
@@ -82,12 +85,24 @@ define(function() {
         return sum > 0
     }
 
+    function initHooks() {
+        lastCommentsCount = getCommentsCount()
+        lastArticlesCount = getArticlesCount()
+        lastCommentIds = getCommentIds()
+        lastArticleIds = getArticleIds()
+    }
+
     function checkAndInvoke() {
         if (hooks.ls_userfeed_get_more_after.length) {
             var articlesCount = getArticlesCount()
             if (articlesCount > lastArticlesCount) {
                 lastArticlesCount = articlesCount
-                invokeHook('ls_userfeed_get_more_after')
+                var articleIds = getArticleIds()
+                var newArticleIds = articleIds.filter(function(id) {
+                    return lastArticleIds.indexOf(id) < 0
+                })
+                lastArticleIds = articleIds
+                invokeHook('ls_userfeed_get_more_after', newArticleIds)
             }
         }
 
@@ -95,14 +110,20 @@ define(function() {
             var commentCount = getCommentsCount()
             if (commentCount > lastCommentsCount) {
                 lastCommentsCount = commentCount
-                invokeHook('ls_comments_load_after')
+                var commentIds = getCommentIds()
+                var newCommentIds = commentIds.filter(function(id) {
+                    return lastCommentIds.indexOf(id) < 0
+                })
+                lastCommentIds = commentIds
+                invokeHook('ls_comments_load_after', newCommentIds)
             }
         }
     }
 
     function invokeHook(name) {
+        var args = Array.prototype.slice.call(arguments, 1);
         (hooks[name]||[]).forEach(function(fn) {
-            fn.call(global)
+            fn.apply(global, args)
         })
     }
 
@@ -112,6 +133,18 @@ define(function() {
 
     function getCommentsCount() {
         return document.getElementsByClassName('comment').length
+    }
+
+    function getArticleIds() {
+        return Array.prototype.map.call(document.querySelectorAll('ARTICLE.topic .topic-title A'), function(e) {
+            return parseInt(/([0-9]+)\.html$/.exec(e.getAttribute('href'))[1], 10)
+        })
+    }
+
+    function getCommentIds() {
+        return Array.prototype.map.call(document.querySelectorAll('.comment'), function(e) {
+            return parseInt(/^comment_id_([0-9]+)$/.exec(e.getAttribute('id'))[1], 10)
+        })
     }
 
     return {
