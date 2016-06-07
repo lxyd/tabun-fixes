@@ -143,7 +143,17 @@ define(function() {
 
     function getCommentIds() {
         return Array.prototype.map.call(document.querySelectorAll('.comment'), function(e) {
-            return parseInt(/^comment_id_([0-9]+)$/.exec(e.getAttribute('id'))[1], 10)
+            var link = e.querySelector('.comment-link A')
+              , id = e.getAttribute('id')
+            if (id) {
+                return parseInt(/^comment_id_([0-9]+)$/.exec(id)[1], 10)
+            } else if (link && link.getAttribute('href')) {
+                return parseInt(/#comment([0-9]+)$/.exec(link.getAttribute('href'))[1], 10)
+            } else {
+                return null
+            }
+        }).filter(function(e) {
+            return e != null
         })
     }
 
