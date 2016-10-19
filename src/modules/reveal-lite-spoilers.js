@@ -44,49 +44,58 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
         var transTextColor         = nightTabun ? '#8F8F8F' : '#999'
         var transATextColor        = nightTabun ? '#7C89CA' : '#66AAFF'
         var transAVisitedTextColor = nightTabun ? '#7C89CA' : '#66AAFF'
+        var transIMGFilter         = nightTabun ? 'contrast(10%) brightness(70%)' : 'contrast(10%) brightness(146%)'
 
         // hover state (fully visible)
         var hoverTextColor         = nightTabun ? '#DFDFDF' : '#666'
         var hoverATextColor        = nightTabun ? '#7C89CA' : '#0099FF'
         var hoverAVisitedTextColor = nightTabun ? '#7C89CA' : '#0099FF'
+        var hoverIMGFilter         = nightTabun ? 'interit' : 'inherit'
 
         var containers = ['.comment', '.comment-preview', '.topic', '.profile-info-about']
             // селекторы для спойлеров в обычном состоянии
           , selectorSpoiler = containers.map(function(s) { return s + ' .spoiler-gray' }).join(', ')
           , selectorA = containers.map(function(s) { return s + ' .spoiler-gray A' }).join(', ')
           , selectorAVisited = containers.map(function(s) { return s + ' .spoiler-gray A:visited' }).join(', ')
+          , selectorIMG = containers.map(function(s) { return s + ' .spoiler-gray IMG'}).join(', ')
             // селекторы для наведённого коммента/поста
           , selectorPostHoverSpoiler = containers.map(function(s) { return s + ':hover .spoiler-gray' }).join(', ')
           , selectorPostHoverA = containers.map(function(s) { return s + ':hover .spoiler-gray A' }).join(', ')
           , selectorPostHoverAVisited = containers.map(function(s) { return s + ':hover .spoiler-gray A:visited' }).join(', ')
+          , selectorPostHoverIMG = containers.map(function(s) { return s + ':hover .spoiler-gray IMG' }).join(', ')
             // селекторы для текущего коммента
           , selectorPostActiveSpoiler = '.comment.comment-current .spoiler-gray'
           , selectorPostActiveA = '.comment.comment-current .spoiler-gray A'
           , selectorPostActiveAVisited = '.comment.comment-current .spoiler-gray A:visited'
+          , selectorPostActiveIMG = '.comment.comment-current .spoiler-gray IMG'
             // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
           , selectorHoverSpoiler = containers.map(function(s) { return s + ':hover .spoiler-gray:hover' }).join(', ')
           , selectorHoverA = containers.map(function(s) { return s + ':hover .spoiler-gray:hover A' }).join(', ')
           , selectorHoverAVisited = containers.map(function(s) { return s + ':hover .spoiler-gray:hover A:visited' }).join(', ')
+          , selectorHoverIMG = containers.map(function(s) { return s + ':hover .spoiler-gray:hover IMG' }).join(', ')
 
         var css = ''
         if (config.alwaysReveal) {
             css += 
                 selectorSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
                 selectorA + ' { color: ' + transATextColor + ' !important; } ' +
-                selectorAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+                selectorAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
+                selectIMG + ' { filter: ' + transIMGFilter + ' !important; -webkit-filter: ' + transIMGFilter + ' !important; } '
         } else {
             if (config.revealOnHover) {
                 css += 
                     selectorPostHoverSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
                     selectorPostHoverA + ' { color: ' + transATextColor + ' !important; } ' +
-                    selectorPostHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+                    selectorPostHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
+                    selectorPostHoverIMG + ' { filter: ' + transIMGFilter + ' !important; -webkit-filter: ' + transIMGFilter + ' !important; } '
             }
 
             if (config.revealInCurrentComment) {
                 css +=
                     selectorPostActiveSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
-                    selectorHoverA + ' { color: ' + transATextColor + ' !important; } ' +
-                    selectorHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+                    selectorPostActiveA + ' { color: ' + transATextColor + ' !important; } ' +
+                    selectorPostActiveAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
+                    selectorPostActiveIMG + ' { filter: ' + transIMGFilter + ' !important; -webkit-filter: ' + transIMGFilter + ' !important; } '
             }
         }
 
@@ -95,7 +104,9 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
                 // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
                 selectorHoverSpoiler + ' { background-color: transparent !important; color: ' + hoverTextColor + ' !important; } ' +
                 selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
-                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
+                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } ' +
+                selectorHoverIMG + ' { filter: ' + hoverIMGFilter + ' !important; -webkit-filter: ' + hoverIMGFilter + ' !important; } '
+                    
         }
 
 
