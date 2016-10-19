@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name    Tabun fixes
-// @version    30.10
+// @version    30.11
 // @description    Несколько улучшений для табуна
 //
 // @updateURL https://raw.githubusercontent.com/lxyd/tabun-fixes/master/dist/tabun-fixes.meta.js
@@ -1654,18 +1654,36 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
     }
 
     FaviconUnreadCountModule.prototype.attach = function faviconUnreadCount_attach(config) {
-        this.onTick = this.updateFavicon.bind(this)
+        this.onCheckNeeded = this.checkAndUpdateFavicon.bind(this)
         this.data = this.prepareData()
-        this.interval = setInterval(this.onTick, 1000)
-        this.updateFavicon()
+
+        this.data.eFavicon.onload = function() {
+            this.checkAndUpdateFavicon()
+            if (!window.MutationObserver) {
+                this.interval = setInterval(this.onCheckNeeded, 1000)
+            } else {
+                this.observer = new MutationObserver(this.onCheckNeeded)
+
+                var o = document.getElementById('new_comments_counter')
+                if (o) {
+                    this.observer.observe(o, {childList:true,characterData:true,subtree:true})
+                }
+            }
+        }.bind(this)
+
+        this.data.eFavicon.src = imgFavicon
     }
 
     FaviconUnreadCountModule.prototype.detach = function faviconUnreadCount_detach() {
         if (this.interval) {
             clearInterval(this.interval)
         }
+        if (this.observer) {
+            observer.disconnect()
+        }
         delete this.interval
-        delete this.onTick
+        delete this.observer
+        delete this.onCheckNeeded
 
         // revert favicon
         if (this.data) {
@@ -1684,9 +1702,10 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
           , ctx = eCanvas.getContext('2d')
           , dimen = 64
           , pad = 4
-          , fontSizeNormal = -1
-          , fontSize100 = -1
-          , fontSizeMoreThan100 = -1
+          , fontSizeXX = -1
+          , fontSizeXXX = -1
+          , fontSize1k = -1
+          , fontSizeMoreThan1k = -1
 
         eCanvas.setAttribute('width', dimen)
         eCanvas.setAttribute('height', dimen)
@@ -1694,37 +1713,40 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
         // calculate font sizes
         for (var s = 32; s > 0; s--) {
             setFontSize(ctx, s)
-            if (fontSizeNormal == -1 && ctx.measureText("'00").width < dimen - 2*pad) {
-                fontSizeNormal = s
+            if (fontSizeXX == -1 && ctx.measureText("'00").width < dimen - 2*pad) {
+                fontSizeXX = s
             }
-            if (fontSize100 == -1 && ctx.measureText("100").width < dimen - 2*pad) {
-                fontSize100 = s
+            if (fontSizeXXX == -1 && ctx.measureText("000").width < dimen - 2*pad) {
+                fontSizeXXX = s
             }
-            if (ctx.measureText(">100").width < dimen - 2*pad) {
-                fontSizeMoreThan100 = s
+            if (fontSize1k == -1 && ctx.measureText("1k").width < dimen - 2*pad) {
+                fontSize1k = s
+            }
+            if (fontSizeMoreThan1k == -1 && ctx.measureText(">1k").width < dimen - 2*pad) {
+                fontSizeMoreThan1k = s
+            }
+            if (fontSizeXX > -1 && fontSizeXXX > -1 && fontSize1k > -1 && fontSizeMoreThan1k > -1) {
                 break
             }
         }
 
-        eFavicon.onload = this.updateFavicon.bind(this)
-        eFavicon.src = imgFavicon
-
         return {
-            bakHref:             bakHref,
-            eFavLink:            eFavLink,
-            eFavicon:            eFavicon,
-            eCanvas:             eCanvas,
-            ctx:                 ctx,
-            fontSizeNormal:      fontSizeNormal,
-            fontSize100:         fontSize100,
-            fontSizeMoreThan100: fontSizeMoreThan100,
-            dimen:               dimen,
-            pad:                 pad,
+            bakHref:            bakHref,
+            eFavLink:           eFavLink,
+            eFavicon:           eFavicon,
+            eCanvas:            eCanvas,
+            ctx:                ctx,
+            fontSizeXX:         fontSizeXX,
+            fontSizeXXX:        fontSizeXXX,
+            fontSize1k:         fontSize1k,
+            fontSizeMoreThan1k: fontSizeMoreThan1k,
+            dimen:              dimen,
+            pad:                pad,
         }
     }
 
 
-    FaviconUnreadCountModule.prototype.updateFavicon = function faviconUnreadCount_updateFavicon() {
+    FaviconUnreadCountModule.prototype.checkAndUpdateFavicon = function faviconUnreadCount_checkAndUpdateFavicon() {
         if (!this.data) {
             return
         }
@@ -1754,11 +1776,13 @@ define(['module', 'ls-hook', 'img/favicon'], function(Module, lsHook, imgFavicon
         if (curCnt == 0) {
             // do nothing
         } else if (curCnt < 100) {
-            this.drawCnt(curCnt, this.data.fontSizeNormal)
-        } else if (curCnt == 100) {
-            this.drawCnt(curCnt, this.data.fontSize100)
+            this.drawCnt(curCnt, this.data.fontSizeXX)
+        } else if (curCnt < 1000) {
+            this.drawCnt(curCnt, this.data.fontSizeXXX)
+        } else if (curCnt == 1000) {
+            this.drawCnt('1k', this.data.fontSize1k)
         } else {
-            this.drawCnt(">100", this.data.fontSizeMoreThan100)
+            this.drawCnt(">1k", this.data.fontSizeMoreThan1k)
         }
 
         // force browser to redraw
@@ -2007,14 +2031,58 @@ define(function() {
         ls_userfeed_get_more_after: [],
     }
     var interval
+      , observer
       , global = this
-      , lastCommentsCount = getCommentsCount()
-      , lastArticlesCount = getArticlesCount()
+      , lastCommentsCount
+      , lastArticlesCount
+      , lastCommentIds = []
+      , lastArticleIds = []
+
+    function isObserving() {
+        return interval || observer
+    }
+
+    function stopObserving() {
+        if (interval) {
+            clearInterval(interval)
+            interval = null
+        }
+        if (observer) {
+            observer.disconnect()
+            observer = null
+        }
+    }
+
+    function startObserving() {
+        if (!window.MutationObserver) {
+            interval = setInterval(checkAndInvoke, 100)
+        } else {
+            observer = new MutationObserver(checkAndInvoke)
+
+            var o
+
+            o = document.getElementById('userfeed_loaded_topics')
+            if (o) {
+                observer.observe(o, {childList:true})
+            }
+
+            o = document.getElementById('content')
+            if (o) {
+                observer.observe(o, {childList:true})
+            }
+
+            o = document.getElementById('count-comments')
+            if (o) {
+                observer.observe(o, {childList:true,characterData:true,subtree:true})
+            }
+        }
+        initHooks()
+    }
 
     function addLsHook(key, fn) {
         hooks[key].push(fn)
-        if (!interval) {
-            interval = setInterval(checkAndInvoke, 100)
+        if (!isObserving()) {
+            startObserving()
         }
     }
 
@@ -2023,9 +2091,8 @@ define(function() {
         if (idx >= 0) {
             hooks[key].splice(idx, 1)
         }
-        if (interval && !hasHooks()) {
-            clearInterval(interval)
-            interval = null
+        if (!hasHooks() && isObserving()) {
+            stopObserving()
         }
     }
 
@@ -2040,12 +2107,24 @@ define(function() {
         return sum > 0
     }
 
+    function initHooks() {
+        lastCommentsCount = getCommentsCount()
+        lastArticlesCount = getArticlesCount()
+        lastCommentIds = getCommentIds()
+        lastArticleIds = getArticleIds()
+    }
+
     function checkAndInvoke() {
         if (hooks.ls_userfeed_get_more_after.length) {
             var articlesCount = getArticlesCount()
             if (articlesCount > lastArticlesCount) {
                 lastArticlesCount = articlesCount
-                invokeHook('ls_userfeed_get_more_after')
+                var articleIds = getArticleIds()
+                var newArticleIds = articleIds.filter(function(id) {
+                    return lastArticleIds.indexOf(id) < 0
+                })
+                lastArticleIds = articleIds
+                invokeHook('ls_userfeed_get_more_after', newArticleIds)
             }
         }
 
@@ -2053,14 +2132,20 @@ define(function() {
             var commentCount = getCommentsCount()
             if (commentCount > lastCommentsCount) {
                 lastCommentsCount = commentCount
-                invokeHook('ls_comments_load_after')
+                var commentIds = getCommentIds()
+                var newCommentIds = commentIds.filter(function(id) {
+                    return lastCommentIds.indexOf(id) < 0
+                })
+                lastCommentIds = commentIds
+                invokeHook('ls_comments_load_after', newCommentIds)
             }
         }
     }
 
     function invokeHook(name) {
+        var args = Array.prototype.slice.call(arguments, 1);
         (hooks[name]||[]).forEach(function(fn) {
-            fn.call(global)
+            fn.apply(global, args)
         })
     }
 
@@ -2070,6 +2155,28 @@ define(function() {
 
     function getCommentsCount() {
         return document.getElementsByClassName('comment').length
+    }
+
+    function getArticleIds() {
+        return Array.prototype.map.call(document.querySelectorAll('ARTICLE.topic .topic-title A'), function(e) {
+            return parseInt(/([0-9]+)\.html$/.exec(e.getAttribute('href'))[1], 10)
+        })
+    }
+
+    function getCommentIds() {
+        return Array.prototype.map.call(document.querySelectorAll('.comment'), function(e) {
+            var link = e.querySelector('.comment-link A')
+              , id = e.getAttribute('id')
+            if (id) {
+                return parseInt(/^comment_id_([0-9]+)$/.exec(id)[1], 10)
+            } else if (link && link.getAttribute('href')) {
+                return parseInt(/#comment([0-9]+)$/.exec(link.getAttribute('href'))[1], 10)
+            } else {
+                return null
+            }
+        }).filter(function(e) {
+            return e != null
+        })
     }
 
     return {
@@ -2427,49 +2534,58 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
         var transTextColor         = nightTabun ? '#8F8F8F' : '#999'
         var transATextColor        = nightTabun ? '#7C89CA' : '#66AAFF'
         var transAVisitedTextColor = nightTabun ? '#7C89CA' : '#66AAFF'
+        var transIMGFilter         = nightTabun ? 'contrast(10%) brightness(70%)' : 'contrast(10%) brightness(146%)'
 
         // hover state (fully visible)
         var hoverTextColor         = nightTabun ? '#DFDFDF' : '#666'
         var hoverATextColor        = nightTabun ? '#7C89CA' : '#0099FF'
         var hoverAVisitedTextColor = nightTabun ? '#7C89CA' : '#0099FF'
+        var hoverIMGFilter         = nightTabun ? 'interit' : 'inherit'
 
         var containers = ['.comment', '.comment-preview', '.topic', '.profile-info-about']
             // селекторы для спойлеров в обычном состоянии
           , selectorSpoiler = containers.map(function(s) { return s + ' .spoiler-gray' }).join(', ')
           , selectorA = containers.map(function(s) { return s + ' .spoiler-gray A' }).join(', ')
           , selectorAVisited = containers.map(function(s) { return s + ' .spoiler-gray A:visited' }).join(', ')
+          , selectorIMG = containers.map(function(s) { return s + ' .spoiler-gray IMG'}).join(', ')
             // селекторы для наведённого коммента/поста
           , selectorPostHoverSpoiler = containers.map(function(s) { return s + ':hover .spoiler-gray' }).join(', ')
           , selectorPostHoverA = containers.map(function(s) { return s + ':hover .spoiler-gray A' }).join(', ')
           , selectorPostHoverAVisited = containers.map(function(s) { return s + ':hover .spoiler-gray A:visited' }).join(', ')
+          , selectorPostHoverIMG = containers.map(function(s) { return s + ':hover .spoiler-gray IMG' }).join(', ')
             // селекторы для текущего коммента
           , selectorPostActiveSpoiler = '.comment.comment-current .spoiler-gray'
           , selectorPostActiveA = '.comment.comment-current .spoiler-gray A'
           , selectorPostActiveAVisited = '.comment.comment-current .spoiler-gray A:visited'
+          , selectorPostActiveIMG = '.comment.comment-current .spoiler-gray IMG'
             // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
           , selectorHoverSpoiler = containers.map(function(s) { return s + ':hover .spoiler-gray:hover' }).join(', ')
           , selectorHoverA = containers.map(function(s) { return s + ':hover .spoiler-gray:hover A' }).join(', ')
           , selectorHoverAVisited = containers.map(function(s) { return s + ':hover .spoiler-gray:hover A:visited' }).join(', ')
+          , selectorHoverIMG = containers.map(function(s) { return s + ':hover .spoiler-gray:hover IMG' }).join(', ')
 
         var css = ''
         if (config.alwaysReveal) {
             css += 
                 selectorSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
                 selectorA + ' { color: ' + transATextColor + ' !important; } ' +
-                selectorAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+                selectorAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
+                selectIMG + ' { filter: ' + transIMGFilter + ' !important; -webkit-filter: ' + transIMGFilter + ' !important; } '
         } else {
             if (config.revealOnHover) {
                 css += 
                     selectorPostHoverSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
                     selectorPostHoverA + ' { color: ' + transATextColor + ' !important; } ' +
-                    selectorPostHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+                    selectorPostHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
+                    selectorPostHoverIMG + ' { filter: ' + transIMGFilter + ' !important; -webkit-filter: ' + transIMGFilter + ' !important; } '
             }
 
             if (config.revealInCurrentComment) {
                 css +=
                     selectorPostActiveSpoiler + ' { background-color: ' + transBgColor + ' !important; color: ' + transTextColor + ' !important; } ' +
-                    selectorHoverA + ' { color: ' + transATextColor + ' !important; } ' +
-                    selectorHoverAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } '
+                    selectorPostActiveA + ' { color: ' + transATextColor + ' !important; } ' +
+                    selectorPostActiveAVisited + ' { color: ' + transAVisitedTextColor + ' !important; } ' +
+                    selectorPostActiveIMG + ' { filter: ' + transIMGFilter + ' !important; -webkit-filter: ' + transIMGFilter + ' !important; } '
             }
         }
 
@@ -2478,7 +2594,9 @@ define(['module', 'cfg-panel-applet'], function(Module, CfgPanelApplet) {
                 // и более специфичные селекторы для оригинального лайтспойлера в наведённом состоянии (иначе эти стили не пробиваются через наши)
                 selectorHoverSpoiler + ' { background-color: transparent !important; color: ' + hoverTextColor + ' !important; } ' +
                 selectorHoverA + ' { background-color: transparent !important; color: ' + hoverATextColor + ' !important; } ' +
-                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } '
+                selectorHoverAVisited + ' { background-color: transparent !important; color: ' + hoverAVisitedTextColor + ' !important; } ' +
+                selectorHoverIMG + ' { filter: ' + hoverIMGFilter + ' !important; -webkit-filter: ' + hoverIMGFilter + ' !important; } '
+                    
         }
 
 
@@ -2738,7 +2856,8 @@ define(['app'], function(App) {
         .add('fix-aside-toolbar',       { defaultEnabled:true,  cfgPanel:{column:2} })
         .add('autospoiler-images',      { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
-            "• Добавлено автоскрытие больших картинок"
+            "• Добавлено автоскрытие больших картинок\n" +
+            "• Приоткрывание лайтспойлеров подогнано под обновление табуна"
         )
         .start()
 

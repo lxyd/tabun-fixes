@@ -18,7 +18,8 @@ define(['app'], function(App) {
         .add('fix-aside-toolbar',       { defaultEnabled:true,  cfgPanel:{column:2} })
         .add('autospoiler-images',      { defaultEnabled:false, cfgPanel:{column:2} })
         .add('whats-new',               { defaultEnabled:true,  cfgPanel:{column:2} },
-            "• Добавлено автоскрытие больших картинок"
+            "• Добавлено автоскрытие больших картинок\n" +
+            "• Приоткрывание лайтспойлеров подогнано под обновление табуна"
         )
         .start()
 
